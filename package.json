@@ -1,0 +1,48 @@
+{
+  "name": "api-drugallergy",
+  "version": "0.1.0",
+  "description": "Drug Allergy Card API — National Scale (Phase development)",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:cov": "vitest run --coverage",
+    "migrate": "tsx src/db/migrate.ts",
+    "seed:patients": "tsx scripts/seed-patients.ts",
+    "etl:import": "tsx src/modules/etl/cli.ts",
+    "etl:gen-mock": "tsx scripts/gen-mock-parquet.ts"
+  },
+  "dependencies": {
+    "@dsnp/parquetjs": "^1.8.0",
+    "chokidar": "^3.6.0",
+    "dotenv": "^17.4.2",
+    "express": "^4.19.2",
+    "pg": "^8.12.0",
+    "pino": "^9.3.2",
+    "pino-http": "^10.2.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.14.11",
+    "@types/pg": "^8.11.6",
+    "@types/supertest": "^6.0.2",
+    "@typescript-eslint/eslint-plugin": "^7.16.1",
+    "@typescript-eslint/parser": "^7.16.1",
+    "@vitest/coverage-v8": "^2.0.4",
+    "eslint": "^8.57.0",
+    "pino-pretty": "^11.2.2",
+    "supertest": "^7.0.0",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.3",
+    "vitest": "^2.0.4"
+  }
+}

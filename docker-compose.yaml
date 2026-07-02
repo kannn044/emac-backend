@@ -1,0 +1,50 @@
+# Database stack สำหรับ Drug Allergy Card API — deploy PostgreSQL บน server
+#
+# ใช้งาน:
+#   cp .env.example .env         # ตั้ง POSTGRES_* ให้ตรงกับ DATABASE_URL
+#   docker compose up -d         # เปิด Postgres (รันเบื้องหลัง)
+#   docker compose ps            # ดูสถานะ + healthcheck
+#   docker compose logs -f postgres
+#   docker compose down          # หยุด (ข้อมูลยังอยู่ใน volume)
+#   docker compose down -v       # หยุด + ลบข้อมูลทั้งหมด (ระวัง!)
+#
+# หลัง DB พร้อม (healthy) → รัน migration จากฝั่ง API:
+#   npm run migrate              # สร้างตาราง (patient_drugallergy, provider_signing_key, ...)
+#
+# NOTE: migration เป็นเจ้าของ schema แต่เพียงผู้เดียว (ผ่าน npm run migrate ที่ track schema_migrations)
+#       จึงไม่ auto-run .sql ผ่าน initdb เพื่อกันสถานะ migration ไม่ตรงกัน
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: drugallergy-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-drugallergy}
+      # เก็บ WAL/checkpoint แบบเหมาะกับ pilot; ปรับได้ตาม spec เครื่อง
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    ports:
+      # bind เฉพาะ localhost เพื่อความปลอดภัย (API อยู่ host เดียวกัน เชื่อมผ่าน 127.0.0.1)
+      # ถ้า API อยู่คนละ host → เปลี่ยนเป็น "${POSTGRES_PORT:-5432}:5432" + ตั้ง firewall/TLS เอง
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    shm_size: 256mb
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-drugallergy}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  pgdata:
+    name: drugallergy-pgdata

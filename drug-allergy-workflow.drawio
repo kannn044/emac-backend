@@ -1,0 +1,170 @@
+<mxfile host="app.diagrams.net" version="24.0.0" type="device">
+  <diagram id="arch" name="1. Architecture">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="826" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- DATA ZONE -->
+        <mxCell id="a_data" value="DATA / ANALYTICS ZONE" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;verticalAlign=top;fontStyle=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="40" y="40" width="360" height="360" as="geometry"/></mxCell>
+        <mxCell id="a_hdc" value="HDC DuckDB (db.db)&#10;person / drug_opd / drug_ipd / diagnosis_ipd" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="70" y="80" width="300" height="50" as="geometry"/></mxCell>
+        <mxCell id="a_p1" value="Pipeline [1] sjs-ten&#10;diagnosis_ipd L51% &#8594; admit list" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="70" y="150" width="300" height="50" as="geometry"/></mxCell>
+        <mxCell id="a_p2" value="Pipeline [2] sjs-ten-ipd-drug&#10;cross-hospital retro search (CID) + TMT + classify" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="70" y="220" width="300" height="60" as="geometry"/></mxCell>
+        <mxCell id="a_stg" value="Patient-level output (staging)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="70" y="310" width="300" height="50" as="geometry"/></mxCell>
+
+        <!-- ETL -->
+        <mxCell id="a_etl" value="ETL Loader (cronjob ทุก 24 ชม.)&#10;idempotent UPSERT — ไม่ทับ record ที่ verified" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="440" y="200" width="280" height="60" as="geometry"/></mxCell>
+
+        <!-- APP ZONE / Postgres -->
+        <mxCell id="a_app" value="APPLICATION ZONE (PostgreSQL)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;verticalAlign=top;fontStyle=1;fontSize=13;" vertex="1" parent="1"><mxGeometry x="760" y="40" width="370" height="360" as="geometry"/></mxCell>
+        <mxCell id="a_t1" value="patient_drugallergy (ข้อมูลตั้งต้น)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="780" y="80" width="330" height="36" as="geometry"/></mxCell>
+        <mxCell id="a_t2" value="provider_signing_key (public key + KMS handle)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="780" y="126" width="330" height="36" as="geometry"/></mxCell>
+        <mxCell id="a_t3" value="allergy_verification (decision + signature)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="780" y="172" width="330" height="36" as="geometry"/></mxCell>
+        <mxCell id="a_t4" value="allergy_card (signed, immutable)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="780" y="218" width="330" height="36" as="geometry"/></mxCell>
+        <mxCell id="a_t5" value="allergy_consent / consent_request" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="780" y="264" width="330" height="36" as="geometry"/></mxCell>
+        <mxCell id="a_t6" value="rejected_records / verification_audit_log" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="780" y="310" width="330" height="36" as="geometry"/></mxCell>
+
+        <!-- API -->
+        <mxCell id="a_api" value="API — Node + TypeScript + Express&#10;(stateless, Nginx + PM2 cluster, Linux)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="440" y="460" width="280" height="60" as="geometry"/></mxCell>
+
+        <!-- Auth + KMS -->
+        <mxCell id="a_moph" value="MOPH Provider ID (OIDC)&#10;JWKS + GET api/info" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1"><mxGeometry x="80" y="450" width="240" height="50" as="geometry"/></mxCell>
+        <mxCell id="a_kms" value="HSM / KMS&#10;gen+เก็บ private key, sign" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1"><mxGeometry x="80" y="520" width="240" height="50" as="geometry"/></mxCell>
+
+        <!-- INBOUND clients -->
+        <mxCell id="a_in" value="INBOUND — Frontend ฝั่ง รพ. (HIS vendor)&#10;login Provider ID &#8594; list &#8594; verify(sign) &#8594; issue card" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="440" y="600" width="320" height="60" as="geometry"/></mxCell>
+        <!-- OUTBOUND clients -->
+        <mxCell id="a_out" value="OUTBOUND — แอปหมอพร้อม / HIS รพ.ปลายทาง&#10;รพ.แสดง QR &#8594; ผู้ป่วยสแกน consent &#8594; ดึง signed card" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="800" y="600" width="320" height="60" as="geometry"/></mxCell>
+
+        <!-- edges -->
+        <mxCell id="ae1" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="a_hdc" target="a_p1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ae2" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="a_p1" target="a_p2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ae3" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="a_p2" target="a_stg"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ae4" value="อ่าน" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="a_stg" target="a_etl"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ae5" value="UPSERT" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="a_etl" target="a_t1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ae6" value="SQL (tenant=hospcode)" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="a_api" target="a_app"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ae7" value="verify JWT + api/info" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;" edge="1" parent="1" source="a_api" target="a_moph"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ae8" value="sign / keys" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;" edge="1" parent="1" source="a_api" target="a_kms"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ae9" value="REST (auth)" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="a_in" target="a_api"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ae10" value="REST (consent + public key)" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="a_out" target="a_api"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram id="auth" name="2. Auth + Enrollment + Key">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="826" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="b_start" value="แพทย์/เภสัช เข้าใช้งานครั้งแรก (list หรือ verify)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="360" y="40" width="320" height="40" as="geometry"/></mxCell>
+        <mxCell id="b_login" value="Login ผ่าน Third-party (ระบบ รพ.) ด้วย MOPH Provider ID&#10;OIDC Authorization Code" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="340" y="110" width="360" height="50" as="geometry"/></mxCell>
+        <mxCell id="b_token" value="API /auth/callback&#10;exchange code &#8594; id_token + access_token" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="340" y="190" width="360" height="50" as="geometry"/></mxCell>
+        <mxCell id="b_jwks" value="verify JWT signature (JWKS)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="360" y="270" width="320" height="40" as="geometry"/></mxCell>
+        <mxCell id="b_info" value="GET api/info (Bearer access_token)&#10;&#8594; position/license, hospcode 5 หลัก, name, isActive" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1"><mxGeometry x="340" y="340" width="360" height="60" as="geometry"/></mxCell>
+
+        <mxCell id="b_check" value="เป็นบุคลากรการแพทย์จริง?&#10;hospcode มีจริงใน master รพ.?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1"><mxGeometry x="380" y="430" width="280" height="100" as="geometry"/></mxCell>
+        <mxCell id="b_deny" value="ปฏิเสธ — ไม่ enroll / ไม่ออก session" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1"><mxGeometry x="800" y="455" width="240" height="50" as="geometry"/></mxCell>
+
+        <mxCell id="b_keyq" value="มี keypair ของ providerId แล้ว?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1"><mxGeometry x="380" y="570" width="280" height="90" as="geometry"/></mxCell>
+        <mxCell id="b_gen" value="ENROLL: gen Ed25519 keypair&#10;private &#8594; HSM/KMS, public &#8594; provider_signing_key" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="80" y="575" width="260" height="70" as="geometry"/></mxCell>
+        <mxCell id="b_load" value="โหลด keyId (handle) ที่มีอยู่" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="710" y="585" width="260" height="50" as="geometry"/></mxCell>
+
+        <mxCell id="b_sess" value="ออก session JWT ของระบบเรา&#10;ฝัง {providerId, hospcode, role, name, keyId}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="360" y="700" width="320" height="60" as="geometry"/></mxCell>
+        <mxCell id="b_flow" value="เข้า flow หลัก: list / verify (ดูหน้า 3)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="730" y="705" width="260" height="50" as="geometry"/></mxCell>
+
+        <mxCell id="be1" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="b_start" target="b_login"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="be2" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="b_login" target="b_token"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="be3" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="b_token" target="b_jwks"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="be4" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="b_jwks" target="b_info"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="be5" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="b_info" target="b_check"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="be6" value="ไม่ผ่าน" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#b85450;" edge="1" parent="1" source="b_check" target="b_deny"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="be7" value="ผ่าน" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="b_check" target="b_keyq"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="be8" value="ยังไม่มี" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="b_keyq" target="b_gen"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="be9" value="มีแล้ว" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="b_keyq" target="b_load"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="be10" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="b_gen" target="b_sess"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="be11" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="b_load" target="b_sess"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="be12" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="b_sess" target="b_flow"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram id="verify" name="3. Verify + Sign + Card">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="826" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="c_list" value="GET /patients — list ผู้ป่วยแพ้ยา (เฉพาะ hospcode ตน)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="340" y="40" width="360" height="40" as="geometry"/></mxCell>
+        <mxCell id="c_open" value="เปิด record &#8594; เห็นยาที่ต้องสงสัยทั้งหมด (suspect_drugs)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="340" y="100" width="360" height="40" as="geometry"/></mxCell>
+        <mxCell id="c_his" value="เภสัชเทียบกับ HIS ของ รพ. (Phase 1 = manual)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1"><mxGeometry x="340" y="160" width="360" height="40" as="geometry"/></mxCell>
+
+        <mxCell id="c_match" value="ข้อมูลแพ้ยาตรงกัน?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1"><mxGeometry x="400" y="230" width="240" height="100" as="geometry"/></mxCell>
+        <mxCell id="c_reject" value="REJECT &#8594; snapshot ไป rejected_records&#10;(แยกจากข้อมูลจริง)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1"><mxGeometry x="780" y="255" width="280" height="60" as="geometry"/></mxCell>
+
+        <mxCell id="c_pick" value="จิ้มเลือกยาที่เป็นสาเหตุจริง (1..n) + ยืนยันกลุ่ม cross-reaction + note" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="340" y="370" width="360" height="50" as="geometry"/></mxCell>
+        <mxCell id="c_prev" value="Preview บัตร (ก่อน stamp)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="360" y="445" width="320" height="40" as="geometry"/></mxCell>
+        <mxCell id="c_stamp" value="กด STAMP / VERIFY" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="380" y="510" width="280" height="40" as="geometry"/></mxCell>
+
+        <mxCell id="c_sign1" value="canonical(decision) &#8594; sha256&#10;KMS.sign(keyId) &#8594; decision_signature" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="80" y="580" width="300" height="60" as="geometry"/></mxCell>
+        <mxCell id="c_sign2" value="canonical(card) &#8594; sha256&#10;KMS.sign(keyId) &#8594; card_signature" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="420" y="580" width="300" height="60" as="geometry"/></mxCell>
+        <mxCell id="c_kms" value="HSM/KMS (private key ไม่ออกจาก KMS)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1"><mxGeometry x="760" y="580" width="300" height="60" as="geometry"/></mxCell>
+
+        <mxCell id="c_tx" value="TRANSACTION: insert allergy_verification(+sig) &#8594; status=verified&#10;&#8594; insert allergy_card(+sig) &#8594; audit log" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="320" y="680" width="400" height="60" as="geometry"/></mxCell>
+        <mxCell id="c_card" value="Signed E-Allergy Card&#10;iframe (render_token) + PDF + QR ตรวจสอบ (public key)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="760" y="680" width="300" height="60" as="geometry"/></mxCell>
+
+        <mxCell id="ce1" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="c_list" target="c_open"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ce2" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="c_open" target="c_his"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ce3" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="c_his" target="c_match"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ce4" value="ไม่ตรง" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#b85450;" edge="1" parent="1" source="c_match" target="c_reject"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ce5" value="ตรง" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="c_match" target="c_pick"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ce6" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="c_pick" target="c_prev"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ce7" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="c_prev" target="c_stamp"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ce8" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="c_stamp" target="c_sign1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ce9" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="c_stamp" target="c_sign2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ce10" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;" edge="1" parent="1" source="c_sign1" target="c_kms"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ce11" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;" edge="1" parent="1" source="c_sign2" target="c_kms"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ce12" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="c_sign1" target="c_tx"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ce13" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="c_sign2" target="c_tx"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ce14" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="c_tx" target="c_card"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+
+  <diagram id="outbound" name="4. Outbound Consent (หมอพร้อม)">
+    <mxGraphModel dx="1200" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="826" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- lanes labels -->
+        <mxCell id="d_l1" value="รพ. ปลายทาง (HIS)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;verticalAlign=top;" vertex="1" parent="1"><mxGeometry x="40" y="40" width="300" height="720" as="geometry"/></mxCell>
+        <mxCell id="d_l2" value="Allergy API" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;verticalAlign=top;" vertex="1" parent="1"><mxGeometry x="360" y="40" width="320" height="720" as="geometry"/></mxCell>
+        <mxCell id="d_l3" value="ผู้ป่วย (แอปหมอพร้อม)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontStyle=1;verticalAlign=top;" vertex="1" parent="1"><mxGeometry x="700" y="40" width="300" height="720" as="geometry"/></mxCell>
+
+        <mxCell id="d_req" value="POST /consent-requests&#10;ขอดูประวัติแพ้ยาคนไข้" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="60" y="90" width="260" height="50" as="geometry"/></mxCell>
+        <mxCell id="d_qr" value="สร้าง consent_request + QR&#10;(อายุสั้น ~5 นาที)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="380" y="90" width="280" height="50" as="geometry"/></mxCell>
+        <mxCell id="d_show" value="แสดง QR บนจอ รพ." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="60" y="180" width="260" height="40" as="geometry"/></mxCell>
+        <mxCell id="d_scan" value="สแกน QR ด้วยหมอพร้อม&#10;POST /consent/scan (auth ตัวตนผู้ป่วย)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="720" y="175" width="260" height="60" as="geometry"/></mxCell>
+        <mxCell id="d_disp" value="แสดงว่า รพ.ใดขอ + ขอบเขต" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="380" y="270" width="280" height="40" as="geometry"/></mxCell>
+        <mxCell id="d_appr" value="ผู้ป่วยกดยินยอม&#10;POST /consent/approve" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1"><mxGeometry x="720" y="340" width="260" height="50" as="geometry"/></mxCell>
+        <mxCell id="d_grant" value="สร้าง allergy_consent (active)&#10;ออก scoped token (grantee_hospcode+cid+expiry)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="380" y="420" width="280" height="60" as="geometry"/></mxCell>
+        <mxCell id="d_get" value="GET /shared/cards (scoped token)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1"><mxGeometry x="60" y="520" width="260" height="40" as="geometry"/></mxCell>
+        <mxCell id="d_chk" value="ตรวจ consent active &#8594; คืน signed card + public key" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1"><mxGeometry x="380" y="520" width="280" height="50" as="geometry"/></mxCell>
+        <mxCell id="d_verify" value="ตรวจลายเซ็นด้วย public key เอง&#10;&#8594; แสดงข้อมูลแพ้ยา" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="60" y="610" width="260" height="60" as="geometry"/></mxCell>
+
+        <mxCell id="d_manage" value="ผู้ป่วยจัดการเอง: ดู card+QR /&#10;ดูประวัติแชร์ / ถอน consent (revoke)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="720" y="600" width="260" height="70" as="geometry"/></mxCell>
+
+        <mxCell id="de1" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="d_req" target="d_qr"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="de2" value="คืน requestId + QR" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="d_qr" target="d_show"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="de3" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="d_show" target="d_scan"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="de4" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="d_scan" target="d_disp"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="de5" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="d_disp" target="d_appr"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="de6" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="d_appr" target="d_grant"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="de7" value="scoped token &#8594; รพ." style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="d_grant" target="d_get"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="de8" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="d_get" target="d_chk"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="de9" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="d_chk" target="d_verify"><mxGeometry relative="1" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

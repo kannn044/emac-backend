@@ -1,0 +1,29 @@
+# ---- dependencies ----
+node_modules/
+
+# ---- build / coverage ----
+dist/
+coverage/
+
+# ---- env (secrets) — commit เฉพาะ .env.example / deploy/*.example ----
+.env
+.env.local
+.env.*.local
+
+# ---- logs ----
+*.log
+logs/
+
+# ---- ETL runtime data (parquet inbox) ----
+data/inbox/*
+!data/inbox/.gitkeep
+
+# ---- vitest transform timestamps (generated) ----
+*.timestamp-*.mjs
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

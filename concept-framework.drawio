@@ -1,0 +1,52 @@
+<mxfile host="app.diagrams.net" version="24.0.0" type="device">
+  <diagram id="concept" name="กรอบแนวคิด (เข้าใจง่าย)">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title -->
+        <mxCell id="title" value="กรอบแนวคิด: ระบบบัตรแพ้ยาดิจิทัล" style="text;html=1;align=center;fontSize=30;fontStyle=1;fontColor=#16335f;" vertex="1" parent="1"><mxGeometry x="200" y="20" width="1200" height="44" as="geometry"/></mxCell>
+        <mxCell id="subtitle" value="เปลี่ยนประวัติแพ้ยาที่กระจัดกระจาย ให้เป็น “บัตรเดียวที่เชื่อถือได้” ติดตัวคนไข้ไปทุกโรงพยาบาล" style="text;html=1;align=center;fontSize=16;fontColor=#5a6b85;" vertex="1" parent="1"><mxGeometry x="200" y="66" width="1200" height="26" as="geometry"/></mxCell>
+
+        <!-- STEP 1 -->
+        <mxCell id="s1" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#dbe3f0;verticalAlign=top;" vertex="1" parent="1"><mxGeometry x="40" y="130" width="290" height="380" as="geometry"/></mxCell>
+        <mxCell id="s1h" value="1   รวบรวมประวัติ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f0ff;strokeColor=none;fontSize=18;fontStyle=1;fontColor=#16335f;align=left;spacingLeft=16;" vertex="1" parent="1"><mxGeometry x="40" y="130" width="290" height="60" as="geometry"/></mxCell>
+        <mxCell id="s1b" value="ระบบไล่หาว่าคนไข้เคยได้ยาอะไร จากโรงพยาบาลไหนบ้าง ไม่ใช่แค่ที่เดียว&#10;&#10;เปรียบเหมือน: รวมประวัติที่กระจัดกระจายจากทุกที่ มาไว้ในแฟ้มเดียว" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=15;fontColor=#33415c;spacingLeft=16;spacingRight=12;spacingTop=12;" vertex="1" parent="1"><mxGeometry x="40" y="200" width="290" height="300" as="geometry"/></mxCell>
+
+        <!-- STEP 2 -->
+        <mxCell id="s2" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#dbe3f0;verticalAlign=top;" vertex="1" parent="1"><mxGeometry x="350" y="130" width="290" height="380" as="geometry"/></mxCell>
+        <mxCell id="s2h" value="2   ผู้เชี่ยวชาญรับรอง" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e4f6ea;strokeColor=none;fontSize=18;fontStyle=1;fontColor=#16335f;align=left;spacingLeft=16;" vertex="1" parent="1"><mxGeometry x="350" y="130" width="290" height="60" as="geometry"/></mxCell>
+        <mxCell id="s2b" value="เภสัชกร/แพทย์ ตรวจสอบ แล้วยืนยันว่าแพ้ยานี้จริง พร้อมเซ็นกำกับชื่อไว้&#10;&#10;เปรียบเหมือน: คุณหมอเซ็นรับรองบนใบรับรองแพทย์" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=15;fontColor=#33415c;spacingLeft=16;spacingRight=12;spacingTop=12;" vertex="1" parent="1"><mxGeometry x="350" y="200" width="290" height="300" as="geometry"/></mxCell>
+
+        <!-- STEP 3 -->
+        <mxCell id="s3" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#dbe3f0;verticalAlign=top;" vertex="1" parent="1"><mxGeometry x="660" y="130" width="290" height="380" as="geometry"/></mxCell>
+        <mxCell id="s3h" value="3   บัตรที่ปลอมไม่ได้" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f1e8fb;strokeColor=none;fontSize=18;fontStyle=1;fontColor=#16335f;align=left;spacingLeft=16;" vertex="1" parent="1"><mxGeometry x="660" y="130" width="290" height="60" as="geometry"/></mxCell>
+        <mxCell id="s3b" value="ออกบัตรแพ้ยาดิจิทัล ที่มีตราประทับกันปลอม ตรวจความแท้ได้เสมอ&#10;&#10;เปรียบเหมือน: ลายน้ำบนธนบัตร ใครก็ดูออกว่าของจริง" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=15;fontColor=#33415c;spacingLeft=16;spacingRight=12;spacingTop=12;" vertex="1" parent="1"><mxGeometry x="660" y="200" width="290" height="300" as="geometry"/></mxCell>
+
+        <!-- STEP 4 -->
+        <mxCell id="s4" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#dbe3f0;verticalAlign=top;" vertex="1" parent="1"><mxGeometry x="970" y="130" width="290" height="380" as="geometry"/></mxCell>
+        <mxCell id="s4h" value="4   คนไข้เป็นเจ้าของ" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff0db;strokeColor=none;fontSize=18;fontStyle=1;fontColor=#16335f;align=left;spacingLeft=16;" vertex="1" parent="1"><mxGeometry x="970" y="130" width="290" height="60" as="geometry"/></mxCell>
+        <mxCell id="s4b" value="บัตรอยู่ในแอปหมอพร้อม คนไข้เลือกเองว่าจะให้โรงพยาบาลไหนดู&#10;&#10;เปรียบเหมือน: เปิดกระเป๋าให้ดูเอง ไม่มีใครแอบหยิบได้" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=15;fontColor=#33415c;spacingLeft=16;spacingRight=12;spacingTop=12;" vertex="1" parent="1"><mxGeometry x="970" y="200" width="290" height="300" as="geometry"/></mxCell>
+
+        <!-- STEP 5 -->
+        <mxCell id="s5" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#dbe3f0;verticalAlign=top;" vertex="1" parent="1"><mxGeometry x="1280" y="130" width="290" height="380" as="geometry"/></mxCell>
+        <mxCell id="s5h" value="5   เกราะตลอดชีวิต" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fde7e7;strokeColor=none;fontSize=18;fontStyle=1;fontColor=#16335f;align=left;spacingLeft=16;" vertex="1" parent="1"><mxGeometry x="1280" y="130" width="290" height="60" as="geometry"/></mxCell>
+        <mxCell id="s5b" value="ทุกโรงพยาบาลเช็คบัตรก่อนจ่ายยา กันการแพ้ยาซ้ำ&#10;&#10;เปรียบเหมือน: สัญญาณเตือนที่ติดตามคนไข้ไปทุกที่" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=top;fontSize=15;fontColor=#33415c;spacingLeft=16;spacingRight=12;spacingTop=12;" vertex="1" parent="1"><mxGeometry x="1280" y="200" width="290" height="300" as="geometry"/></mxCell>
+
+        <!-- arrows -->
+        <mxCell id="ar1" style="endArrow=classic;html=1;strokeColor=#b9c4d6;strokeWidth=2;" edge="1" parent="1" source="s1" target="s2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ar2" style="endArrow=classic;html=1;strokeColor=#b9c4d6;strokeWidth=2;" edge="1" parent="1" source="s2" target="s3"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ar3" style="endArrow=classic;html=1;strokeColor=#b9c4d6;strokeWidth=2;" edge="1" parent="1" source="s3" target="s4"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="ar4" style="endArrow=classic;html=1;strokeColor=#b9c4d6;strokeWidth=2;" edge="1" parent="1" source="s4" target="s5"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- Heart of system -->
+        <mxCell id="heart" value="หัวใจของระบบ 3 ข้อ" style="text;html=1;align=center;fontSize=22;fontStyle=1;fontColor=#16335f;" vertex="1" parent="1"><mxGeometry x="600" y="560" width="400" height="34" as="geometry"/></mxCell>
+
+        <mxCell id="h1" value="เชื่อถือได้&#10;&#10;ผู้เชี่ยวชาญรับรอง และมีตรากันปลอม" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eef4ff;strokeColor=#c7d6ee;fontSize=16;fontColor=#1f78d1;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="120" y="610" width="420" height="150" as="geometry"/></mxCell>
+        <mxCell id="h2" value="คนไข้เป็นเจ้าของ&#10;&#10;ต้องได้รับความยินยอม ก่อนถึงจะแชร์ได้" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff6e9;strokeColor=#f0dcbb;fontSize=16;fontColor=#e08a1e;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="590" y="610" width="420" height="150" as="geometry"/></mxCell>
+        <mxCell id="h3" value="ใช้ได้ทั้งประเทศ&#10;&#10;เชื่อมโยงทุกโรงพยาบาล ไปที่ไหนก็ปลอดภัย" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eafaef;strokeColor=#c2e7cf;fontSize=16;fontColor=#2e9e54;fontStyle=1;" vertex="1" parent="1"><mxGeometry x="1060" y="610" width="420" height="150" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
