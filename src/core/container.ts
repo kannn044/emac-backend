@@ -11,6 +11,7 @@ import type {
   SigningKeyStore,
 } from '@/modules/auth/ports';
 import { MockAuthProvider } from '@/adapters/auth/mock-auth.provider';
+import { MophProviderAuthProvider } from '@/adapters/auth/moph-provider.provider';
 import { LocalKeyService } from '@/adapters/keys/local-key.service';
 import {
   InMemorySigningKeyStore,
@@ -98,10 +99,17 @@ export function buildContainer(
     overrides.auth ??
     (config.adapters.authProvider === 'mock'
       ? new MockAuthProvider()
-      : // real MophAuthProvider ยังไม่ implement (P2-real) — fail fast ถ้าถูกเลือก
-        (() => {
-          throw new Error('AUTH_PROVIDER=real ยังไม่รองรับ (mock เท่านั้นในเฟสนี้)');
-        })());
+      : new MophProviderAuthProvider(
+          {
+            // superRefine ใน config การันตีว่าค่าเหล่านี้ไม่ว่างเมื่อ authProvider=real
+            baseUrl: config.mophProvider.baseUrl ?? '',
+            clientId: config.mophProvider.clientId,
+            clientSecret: config.mophProvider.clientSecret,
+            redirectUri: config.mophProvider.redirectUri,
+            scope: config.mophProvider.scope,
+          },
+          logger,
+        ));
 
   const keyStore: SigningKeyStore =
     overrides.keyStore ??

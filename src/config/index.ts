@@ -59,6 +59,26 @@ const ConfigSchema = z.object({
     ttlSeconds: z.coerce.number().int().positive().default(900),
   }),
 
+  /**
+   * MOPH Provider ID (OAuth2 Authorization Code) — ใช้เมื่อ AUTH_PROVIDER=real
+   * อ้างอิง "คู่มือการเชื่อมต่อระบบด้วย OAuth ของ Provider ID" (26 พ.ค. 2568):
+   *   authorize : GET  {baseUrl}/v1/oauth2/authorize
+   *   token     : POST {baseUrl}/v1/oauth2/token   (Basic client_id:secret)
+   *   profile   : GET  {baseUrl}/api/v1/services/profile
+   * UAT: https://uat-provider.id.th | PRD: https://provider.id.th
+   */
+  mophProvider: z.object({
+    baseUrl: z.string().url().optional().or(z.literal('')).transform((v) => (v === '' ? undefined : v)),
+    clientId: z.string().default(''),
+    clientSecret: z.string().default(''),
+    // ต้องตรงเป๊ะกับที่ลงทะเบียนไว้กับ Provider ID (exact match)
+    redirectUri: z.string().default(''),
+    // scope ที่ client ได้รับอนุมัติ (คั่นด้วย space)
+    scope: z.string().default('cid name_th name_eng organization'),
+    // URL หน้า callback ฝั่ง frontend — GET /auth/callback จะ redirect ต่อไปที่นี่พร้อม ?code
+    frontendCallbackUrl: z.string().default(''),
+  }),
+
   etl: z.object({
     retroWindowDays: z.coerce.number().int().positive().default(30),
     inboxDir: z.string().min(1).default('data/inbox'),
@@ -72,6 +92,24 @@ const ConfigSchema = z.object({
     // ว่าง = ไม่จำกัด tenant
     hospcodeAllowlist: z.array(z.string()).default([]),
   }),
+}).superRefine((cfg, ctx) => {
+  // AUTH_PROVIDER=real → ต้องมี config MOPH Provider ID ครบ (fail fast ตอน boot)
+  if (cfg.adapters.authProvider === 'real') {
+    const required: Array<[string, string | undefined]> = [
+      ['mophProvider.baseUrl (MOPH_PROVIDER_BASE_URL)', cfg.mophProvider.baseUrl],
+      ['mophProvider.clientId (MOPH_PROVIDER_CLIENT_ID)', cfg.mophProvider.clientId || undefined],
+      ['mophProvider.clientSecret (MOPH_PROVIDER_CLIENT_SECRET)', cfg.mophProvider.clientSecret || undefined],
+      ['mophProvider.redirectUri (MOPH_PROVIDER_REDIRECT_URI)', cfg.mophProvider.redirectUri || undefined],
+    ];
+    for (const [name, value] of required) {
+      if (!value) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `${name} is required when AUTH_PROVIDER=real`,
+        });
+      }
+    }
+  }
 });
 
 export type AppConfig = z.infer<typeof ConfigSchema>;
@@ -110,6 +148,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     session: {
       jwtSecret: env.SESSION_JWT_SECRET,
       ttlSeconds: env.SESSION_JWT_TTL_SECONDS,
+    },
+    mophProvider: {
+      baseUrl: env.MOPH_PROVIDER_BASE_URL,
+      clientId: env.MOPH_PROVIDER_CLIENT_ID,
+      clientSecret: env.MOPH_PROVIDER_CLIENT_SECRET,
+      redirectUri: env.MOPH_PROVIDER_REDIRECT_URI,
+      scope: env.MOPH_PROVIDER_SCOPE,
+      frontendCallbackUrl: env.MOPH_PROVIDER_FRONTEND_CALLBACK_URL,
     },
     etl: {
       retroWindowDays: env.RETRO_WINDOW_DAYS,

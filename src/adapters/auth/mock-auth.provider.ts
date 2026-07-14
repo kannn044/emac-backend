@@ -72,6 +72,10 @@ export class MockAuthProvider implements AuthProvider {
     return info;
   }
 
+  buildAuthorizeUrl(): string | null {
+    return null; // mock ไม่มีหน้า login ภายนอก
+  }
+
   listMockProfiles(): MockProfileSummary[] {
     return [...this.byId.values()].map((p) => ({
       providerId: p.providerId,

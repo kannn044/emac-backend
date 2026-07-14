@@ -47,6 +47,8 @@ export function createApp(container: Container): Express {
       provider: container.auth,
       authService: container.authService,
       sessions: container.sessions,
+      frontendCallbackUrl:
+        container.config.mophProvider.frontendCallbackUrl || undefined,
     }),
   );
   // API v1 — feature modules (P3+)

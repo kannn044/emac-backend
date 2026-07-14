@@ -15,9 +15,9 @@ export interface MockProfileSummary {
 }
 
 /**
- * AuthProvider — MOPH Provider ID (OIDC + api/info)
+ * AuthProvider — MOPH Provider ID (OAuth2 Authorization Code + profile API)
  * P2 (mock): แปลง mock code/providerId → ProviderInfo
- * real: buildAuthorizeUrl → exchange code → verify id_token (JWKS) → GET api/info
+ * real: buildAuthorizeUrl → exchange code (/v1/oauth2/token) → GET /api/v1/services/profile
  */
 export interface AuthProvider {
   readonly kind: 'mock' | 'real';
@@ -25,6 +25,8 @@ export interface AuthProvider {
   authenticate(credential: string): Promise<ProviderInfo>;
   /** mock เท่านั้น: รายชื่อโปรไฟล์ให้ frontend เลือก (real → []) */
   listMockProfiles(): MockProfileSummary[];
+  /** real เท่านั้น: URL หน้า login ของ Provider ID (mock → null) */
+  buildAuthorizeUrl(state?: string): string | null;
 }
 
 /** 1 คู่กุญแจของ provider (custody ฝั่ง server) */
