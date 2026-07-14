@@ -49,6 +49,9 @@ export function createApp(container: Container): Express {
       sessions: container.sessions,
       frontendCallbackUrl:
         container.config.mophProvider.frontendCallbackUrl || undefined,
+      stateSecret: container.config.session.jwtSecret,
+      thirdPartyRedirectAllowlist:
+        container.config.mophProvider.thirdPartyRedirectAllowlist,
     }),
   );
   // API v1 — feature modules (P3+)

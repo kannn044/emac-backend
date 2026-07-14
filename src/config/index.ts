@@ -77,6 +77,9 @@ const ConfigSchema = z.object({
     scope: z.string().default('cid name_th name_eng organization'),
     // URL หน้า callback ฝั่ง frontend — GET /auth/callback จะ redirect ต่อไปที่นี่พร้อม ?code
     frontendCallbackUrl: z.string().default(''),
+    // third-party OAuth broker: URL ที่อนุญาตให้เด้ง code กลับ (ว่าง = ปิดฟีเจอร์)
+    // entry เป็น origin (อนุญาตทุก path) หรือ URL เต็ม (ต้องตรง path) — ดู oauth-state.ts
+    thirdPartyRedirectAllowlist: z.array(z.string()).default([]),
   }),
 
   etl: z.object({
@@ -156,6 +159,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       redirectUri: env.MOPH_PROVIDER_REDIRECT_URI,
       scope: env.MOPH_PROVIDER_SCOPE,
       frontendCallbackUrl: env.MOPH_PROVIDER_FRONTEND_CALLBACK_URL,
+      thirdPartyRedirectAllowlist: parseList(env.THIRD_PARTY_REDIRECT_ALLOWLIST),
     },
     etl: {
       retroWindowDays: env.RETRO_WINDOW_DAYS,
