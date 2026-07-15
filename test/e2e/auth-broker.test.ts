@@ -125,6 +125,34 @@ describe('third-party OAuth broker', () => {
     expect(res.status).toBe(401);
   });
 
+  it('callback คืน refreshToken → POST /auth/refresh ออก access ใหม่ใช้ /auth/me ได้', async () => {
+    const { app } = makeBrokerHarness();
+    const login = await request(app).post('/auth/callback').send({ code: 'good-code' });
+    expect(login.body.refreshToken).toBeTruthy();
+    expect(login.body.refreshExpiresAt).toBeTruthy();
+
+    const refreshed = await request(app)
+      .post('/auth/refresh')
+      .send({ refreshToken: login.body.refreshToken });
+    expect(refreshed.status).toBe(201);
+    expect(refreshed.body.token).toBeTruthy();
+    expect(refreshed.body.refreshToken).toBeTruthy();
+
+    const me = await request(app)
+      .get('/auth/me')
+      .set('Authorization', `Bearer ${refreshed.body.token}`);
+    expect(me.status).toBe(200);
+    expect(me.body.identity.providerId).toBe('real-doc-001');
+  });
+
+  it('POST /auth/refresh ด้วย token มั่ว → 401', async () => {
+    const { app } = makeBrokerHarness();
+    const res = await request(app)
+      .post('/auth/refresh')
+      .send({ refreshToken: 'not.a.token' });
+    expect(res.status).toBe(401);
+  });
+
   it('real mode: /auth/mode = real และ mock endpoints ปิด', async () => {
     const { app } = makeBrokerHarness();
     const mode = await request(app).get('/auth/mode');

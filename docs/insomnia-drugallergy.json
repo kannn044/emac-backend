@@ -20,12 +20,15 @@
         "base_url": "http://localhost:3000",
         "auth_code": "PASTE_CODE_FROM_REDIRECT_URL",
         "session_token": "PASTE_TOKEN_FROM_AUTH_CALLBACK",
+        "refresh_token": "PASTE_REFRESH_TOKEN_FROM_AUTH_CALLBACK",
         "third_party_redirect": "https://your-app.example.go.th/emac/callback",
         "third_party_state": "random-csrf-string-from-your-app",
         "patient_id": "PASTE_PATIENT_ID",
         "card_id": "PASTE_CARD_ID",
         "render_token": "PASTE_RENDER_TOKEN",
-        "provider_id": "PASTE_PROVIDER_ID"
+        "provider_id": "PASTE_PROVIDER_ID",
+        "cid_1": "REDACTED_CID",
+        "cid_2": "1234567890123"
       },
       "dataPropertyOrder": null,
       "color": null,
@@ -148,6 +151,25 @@
       },
       "authentication": {},
       "metaSortKey": 203
+    },
+    {
+      "_id": "req_auth_refresh",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "POST /auth/refresh — ต่ออายุ access token",
+      "description": "access token อายุ 30 นาที · ส่ง refresh_token → ได้ token + refreshToken ชุดใหม่\nrefresh ได้จนถึงเพดาน 12 ชม. นับจาก login — เกินนั้นตอบ 401 ต้อง login ใหม่\n\nขั้นตอน: copy refreshToken จาก response ของ /auth/callback มาใส่ตัวแปร refresh_token → ยิง request นี้ → เอา token ใหม่ไปใส่ session_token",
+      "method": "POST",
+      "url": "{{ _.base_url }}/auth/refresh",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "parameters": [],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n\t\"refreshToken\": \"{{ _.refresh_token }}\"\n}"
+      },
+      "authentication": {},
+      "metaSortKey": 203.5
     },
     {
       "_id": "req_auth_me",
@@ -384,10 +406,39 @@
     },
 
     {
+      "_id": "fld_drugallergy",
+      "_type": "request_group",
+      "parentId": "wrk_emac_drugallergy",
+      "name": "5 · Drug Allergy History (CID lookup)",
+      "metaSortKey": 550
+    },
+    {
+      "_id": "req_da_search",
+      "_type": "request",
+      "parentId": "fld_drugallergy",
+      "name": "POST /api/v1/drugallergy/search — ค้นประวัติแพ้ยาตาม CID (1 ตัว)",
+      "description": "ส่ง CID เดียว → ค้นในไฟล์ parquet ทุกไฟล์ (drugallergy_*) ด้วย DuckDB → คืนประวัติแพ้ยา\nคืนทุกคอลัมน์ใน parquet ยกเว้น HOSPCODE, PID, CID\n\nต้องมี session token (Bearer) จากการ login ผ่าน Provider ID broker\n\nโควตา: 10,000 record/วัน ต่อ รพ. (hospcode ของผู้ login) — reset เที่ยงคืนเวลาไทย\nresponse มี field quota: { limit, used, remaining, resetAt }\nถ้าชนโควตา จะคืนเท่าที่เหลือ + truncated=true (ยังมีข้อมูลแต่ดึงไม่ได้จนกว่าจะ reset)",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/drugallergy/search",
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" }
+      ],
+      "parameters": [],
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n\t\"cid\": \"{{ _.cid_1 }}\"\n}"
+      },
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.session_token }}"
+      },
+      "metaSortKey": 551
+    },
+    {
       "_id": "fld_cards",
       "_type": "request_group",
       "parentId": "wrk_emac_drugallergy",
-      "name": "5 · Cards & Keys (public)",
+      "name": "6 · Cards & Keys (public)",
       "metaSortKey": 600
     },
     {

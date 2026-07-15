@@ -5,6 +5,10 @@ node_modules/
 dist/
 coverage/
 
+# ---- extra files ----
+/docs
+/deploy
+
 # ---- env (secrets) — commit เฉพาะ .env.example / deploy/*.example ----
 .env
 .env.local

@@ -22,7 +22,10 @@ export interface ProviderInfo {
   isMedicalPersonnel: boolean; // true = บุคลากรการแพทย์จริง (เงื่อนไขออก session)
 }
 
-/** claims ใน session JWT ของระบบเรา */
+/** ประเภท token: access = เรียก API, refresh = ต่ออายุ access */
+export type TokenType = 'access' | 'refresh';
+
+/** claims ใน session JWT ของระบบเรา (access + refresh ใช้โครงเดียวกัน ต่างที่ typ/exp) */
 export interface SessionClaims {
   sub: string; // providerId
   hospcode: string;
@@ -30,8 +33,11 @@ export interface SessionClaims {
   role: Role;
   name: string;
   keyId: string; // key ที่ enroll ไว้ (ใช้ตอน sign ใน P4)
+  typ: TokenType; // access | refresh
+  sid: string; // session id (คงที่ตลอด 1 session — access/refresh คู่เดียวกัน)
+  sessionExp: number; // เพดานอายุ session (login + 12 ชม.) — refresh เกินนี้ไม่ได้
   iat: number; // seconds
-  exp: number; // seconds
+  exp: number; // seconds (access = สั้น, refresh = = sessionExp)
 }
 
 /** context ที่ middleware แนบเข้า req หลังตรวจ session แล้ว */

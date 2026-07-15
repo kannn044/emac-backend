@@ -56,7 +56,10 @@ const ConfigSchema = z.object({
     jwtSecret: z
       .string({ required_error: 'SESSION_JWT_SECRET is required' })
       .min(8, 'SESSION_JWT_SECRET too short'),
-    ttlSeconds: z.coerce.number().int().positive().default(900),
+    // access token — อายุสั้น (default 30 นาที)
+    ttlSeconds: z.coerce.number().int().positive().default(1800),
+    // refresh token / เพดาน session — refresh ได้จนถึง login + ค่านี้ (default 12 ชม.)
+    refreshTtlSeconds: z.coerce.number().int().positive().default(43200),
   }),
 
   /**
@@ -94,6 +97,20 @@ const ConfigSchema = z.object({
   rollout: z.object({
     // ว่าง = ไม่จำกัด tenant
     hospcodeAllowlist: z.array(z.string()).default([]),
+  }),
+
+  /**
+   * Drug allergy history query — อ่านจากไฟล์ parquet (drugallergy_*.parquet) บน server
+   * ด้วย DuckDB (read_parquet glob) แล้วค้นด้วย CID
+   */
+  drugAllergy: z.object({
+    // glob path ของไฟล์ parquet บน server เช่น /data/drugallergy/drugallergy_*.parquet
+    // ว่าง = ปิด endpoint (ตอบ 503)
+    parquetGlob: z.string().default(''),
+    // โควตา record ที่ดึงได้ต่อ client ต่อวัน (reset เที่ยงคืน ICT)
+    dailyRecordLimit: z.coerce.number().int().positive().default(10000),
+    // จำกัดจำนวน CID ต่อ 1 request (กัน IN list ยาวเกิน)
+    maxCidsPerRequest: z.coerce.number().int().positive().default(5000),
   }),
 }).superRefine((cfg, ctx) => {
   // AUTH_PROVIDER=real → ต้องมี config MOPH Provider ID ครบ (fail fast ตอน boot)
@@ -151,6 +168,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     session: {
       jwtSecret: env.SESSION_JWT_SECRET,
       ttlSeconds: env.SESSION_JWT_TTL_SECONDS,
+      refreshTtlSeconds: env.SESSION_REFRESH_TTL_SECONDS,
     },
     mophProvider: {
       baseUrl: env.MOPH_PROVIDER_BASE_URL,
@@ -167,6 +185,11 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       dropDrugsAfterAdmit: env.ETL_DROP_DRUGS_AFTER_ADMIT,
     },
     rollout: { hospcodeAllowlist: parseList(env.HOSPCODE_ALLOWLIST) },
+    drugAllergy: {
+      parquetGlob: env.DRUGALLERGY_PARQUET_GLOB,
+      dailyRecordLimit: env.DRUGALLERGY_DAILY_LIMIT,
+      maxCidsPerRequest: env.DRUGALLERGY_MAX_CIDS,
+    },
   };
 
   const result = ConfigSchema.safeParse(candidate);

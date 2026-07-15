@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@dsnp/parquetjs": "^1.8.0",
+    "@duckdb/node-api": "^1.5.4-r.1",
     "chokidar": "^3.6.0",
     "dotenv": "^17.4.2",
     "express": "^4.19.2",
@@ -39,6 +40,7 @@
     "@typescript-eslint/parser": "^7.16.1",
     "@vitest/coverage-v8": "^2.0.4",
     "eslint": "^8.57.0",
+    "pg-mem": "^3.0.14",
     "pino-pretty": "^11.2.2",
     "supertest": "^7.0.0",
     "tsx": "^4.16.2",

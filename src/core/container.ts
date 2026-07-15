@@ -37,6 +37,14 @@ import type { CardRepository } from '@/modules/cards/ports';
 import { CardService } from '@/modules/cards/cards.service';
 import { PgCardRepository } from '@/adapters/db/card.repository';
 import { InMemoryCardRepository } from '@/adapters/memory/card.memory';
+import type {
+  AllergySource,
+  AllergyQuotaStore,
+} from '@/modules/drugallergy/ports';
+import { DrugAllergyService } from '@/modules/drugallergy/drugallergy.service';
+import { DuckDbAllergySource } from '@/adapters/parquet/duckdb-allergy-source';
+import { PgAllergyQuotaStore } from '@/adapters/db/allergy-quota.repository';
+import { InMemoryAllergyQuotaStore } from '@/adapters/memory/allergy-quota.memory';
 
 /**
  * Container — สิ่งที่ทุก module ใช้ร่วมกัน (ประกอบครั้งเดียวที่ composition root)
@@ -61,6 +69,8 @@ export interface Container {
   verificationService: VerificationService;
   // Cards (P5)
   cardsService: CardService;
+  // Drug allergy history query (parquet/DuckDB)
+  drugAllergyService: DrugAllergyService;
   shutdown(): Promise<void>;
 }
 
@@ -72,6 +82,8 @@ export interface ContainerOverrides {
   clock?: Clock;
   ids?: IdGenerator;
   db?: Pool;
+  allergySource?: AllergySource;
+  allergyQuota?: AllergyQuotaStore;
   healthProbes?: HealthProbe[];
   auth?: AuthProvider;
   keyStore?: SigningKeyStore;
@@ -122,6 +134,7 @@ export function buildContainer(
   const sessions = new SessionService(
     config.session.jwtSecret,
     config.session.ttlSeconds,
+    config.session.refreshTtlSeconds,
     clock,
   );
 
@@ -154,6 +167,23 @@ export function buildContainer(
     (useMemoryData ? new InMemoryCardRepository() : new PgCardRepository(db));
   const cardsService = new CardService(cardRepo, keys, ids, clock, config);
 
+  // ---- Drug allergy history query (parquet/DuckDB + quota) ----
+  const allergySource: AllergySource =
+    overrides.allergySource ??
+    new DuckDbAllergySource(config.drugAllergy.parquetGlob, logger);
+  const allergyQuota: AllergyQuotaStore =
+    overrides.allergyQuota ??
+    (useMemoryData
+      ? new InMemoryAllergyQuotaStore()
+      : new PgAllergyQuotaStore(db));
+  const drugAllergyService = new DrugAllergyService(
+    allergySource,
+    allergyQuota,
+    clock,
+    config.drugAllergy.dailyRecordLimit,
+    config.drugAllergy.maxCidsPerRequest,
+  );
+
   const patientsService = new PatientsService(patientRepo, auditRepo, clock);
   const verificationService = new VerificationService(
     patientRepo,
@@ -179,6 +209,7 @@ export function buildContainer(
     patientsService,
     verificationService,
     cardsService,
+    drugAllergyService,
     async shutdown() {
       await db.end().catch(() => undefined);
     },

@@ -38,6 +38,10 @@ const CallbackBody = z.object({
   code: z.string().min(1, 'code is required'),
 });
 
+const RefreshBody = z.object({
+  refreshToken: z.string().min(1, 'refreshToken is required'),
+});
+
 export function authRouter(deps: {
   provider: AuthProvider;
   authService: AuthService;
@@ -79,6 +83,8 @@ export function authRouter(deps: {
       res.status(201).json({
         token: result.session.token,
         expiresAt: result.session.expiresAt,
+        refreshToken: result.session.refreshToken,
+        refreshExpiresAt: result.session.refreshExpiresAt,
         profile: result.profile,
       });
     }),
@@ -169,6 +175,8 @@ export function authRouter(deps: {
       res.status(201).json({
         token: result.session.token,
         expiresAt: result.session.expiresAt,
+        refreshToken: result.session.refreshToken,
+        refreshExpiresAt: result.session.refreshExpiresAt,
         profile: result.profile,
       });
     }),
@@ -189,7 +197,30 @@ export function authRouter(deps: {
       res.status(201).json({
         token: result.session.token,
         expiresAt: result.session.expiresAt,
+        refreshToken: result.session.refreshToken,
+        refreshExpiresAt: result.session.refreshExpiresAt,
         profile: result.profile,
+      });
+    }),
+  );
+
+  /**
+   * ต่ออายุ session — ส่ง refreshToken → ได้ access + refresh ชุดใหม่
+   * refresh ได้จนถึงเพดาน session (login + 12 ชม.) เกินนั้น → 401 ต้อง login ใหม่
+   */
+  router.post(
+    '/auth/refresh',
+    wrap(async (req, res) => {
+      const parsed = RefreshBody.safeParse(req.body);
+      if (!parsed.success) {
+        throw AppError.badRequest('Invalid body', parsed.error.flatten());
+      }
+      const session = deps.sessions.refresh(parsed.data.refreshToken);
+      res.status(201).json({
+        token: session.token,
+        expiresAt: session.expiresAt,
+        refreshToken: session.refreshToken,
+        refreshExpiresAt: session.refreshExpiresAt,
       });
     }),
   );

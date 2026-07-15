@@ -12,6 +12,7 @@ import {
   authCardsRouter,
   embedRouter,
 } from './routes/cards';
+import { drugAllergyRouter } from './routes/drugallergy';
 
 /**
  * App factory — ประกอบ Express app จาก container
@@ -80,6 +81,14 @@ export function createApp(container: Container): Express {
     authCardsRouter({
       sessions: container.sessions,
       cards: container.cardsService,
+    }),
+  );
+  // Drug allergy history query (parquet/DuckDB) — auth ด้วย session Bearer
+  router.use(
+    '/api/v1',
+    drugAllergyRouter({
+      sessions: container.sessions,
+      service: container.drugAllergyService,
     }),
   );
 
