@@ -37,6 +37,13 @@ class FakeSource implements AllergySource {
       TYPEDX: '2', ALEVEL: '3', SYMPTOM: 'rash',
     }));
   }
+  async queryOneFullRaw(_cid: string, limit: number): Promise<Record<string, string | null>[]> {
+    const n = Math.min(this.total, limit);
+    return Array.from({ length: n }, (_, i) => ({
+      HOSPCODE: '10670', PID: `p${i}`, CID: '1100700000001',
+      DATERECORD: '2026-01-01', DRUGALLERGY: 'D1', DNAME: `drug-${i}`,
+    }));
+  }
 }
 
 const fixedClock: Clock = { now: () => new Date('2026-07-15T05:00:00Z') };

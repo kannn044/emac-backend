@@ -156,6 +156,58 @@ export class DuckDbAllergySource implements AllergySource {
       return out;
     });
   }
+
+  /**
+   * (service/M2M) ค้น CID เดียว → คืนทุกคอลัมน์ (รวม HOSPCODE, PID, CID)
+   * SELECT * REPLACE(...) — CAST คอลัมน์ date/timestamp ที่รู้จัก → VARCHAR
+   */
+  async queryOneFullRaw(
+    cid: string,
+    limit: number,
+  ): Promise<Record<string, string | null>[]> {
+    if (!this.parquetGlob) {
+      throw AppError.unavailable('ยังไม่ได้ตั้งค่าแหล่งข้อมูลแพ้ยา (DRUGALLERGY_PARQUET_GLOB)');
+    }
+    if (!cid || limit <= 0) return [];
+
+    const sql = `
+      SELECT *
+        REPLACE (
+          CAST(DATERECORD AS VARCHAR) AS DATERECORD,
+          CAST(D_UPDATE AS VARCHAR) AS D_UPDATE,
+          CAST(HDC_DATE AS VARCHAR) AS HDC_DATE
+        )
+      FROM read_parquet($glob, union_by_name = true)
+      WHERE CID = $cid
+      ORDER BY DATERECORD
+      LIMIT $lim
+    `;
+
+    let rows: Record<string, unknown>[];
+    try {
+      const con = await this.conn();
+      const reader = await con.runAndReadAll(sql, {
+        glob: this.parquetGlob,
+        cid,
+        lim: limit,
+      });
+      rows = reader.getRowObjects();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (/No files found|IO Error|could not/i.test(msg)) {
+        this.logger?.warn({ glob: this.parquetGlob, msg }, 'allergy parquet: no files / read error');
+        return [];
+      }
+      this.logger?.error({ err }, 'allergy parquet query failed');
+      throw AppError.internal('ค้นหาข้อมูลแพ้ยาไม่สำเร็จ');
+    }
+
+    return rows.map((r) => {
+      const out: Record<string, string | null> = {};
+      for (const [k, v] of Object.entries(r)) out[k] = s(v);
+      return out;
+    });
+  }
 }
 
 function s(v: unknown): string | null {

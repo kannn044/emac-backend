@@ -103,6 +103,32 @@ public key ผู้ลงนาม: `GET /api/v1/keys/:providerId`
 
 > multi-CID (`{ "cids": [...] }`) comment ไว้ใน `routes/drugallergy.ts` (ยังไม่เปิดใช้) — uncomment + เปลี่ยน path เมื่อต้องใช้
 
+### Service endpoint (M2M — ไม่ผ่าน Provider ID)
+
+`POST /api/v1/drugallergy/lookup` — สำหรับ backend ของเราเอง auth ด้วย **fixed IP + API key** เท่านั้น
+(ไม่ผ่าน Provider ID, **ไม่มีโควตา**) → คืน **ทุกคอลัมน์ในไฟล์ parquet รวม HOSPCODE/PID/CID**
+
+```bash
+# request
+POST /api/v1/drugallergy/lookup
+X-API-Key: <key>
+{ "cid": "1234567890123" }
+# → { "records": [ { HOSPCODE, PID, CID, DATERECORD, DRUGALLERGY, DNAME, ... } ], "count": N }
+```
+
+auth 2 ชั้น: (1) client IP (จาก `CF-Connecting-IP`) ต้องอยู่ใน allowlist  (2) `X-API-Key` ตรง (timing-safe)
+ปิดโดย default — ต้องตั้งทั้ง 2 ค่าถึงจะเปิด:
+
+```bash
+SERVICE_API_KEYS=<random-long-key1,key2>       # หลายตัวเพื่อ rotate
+SERVICE_ALLOWLIST_IPS=<public-ip-ของ-server>    # IP ที่ Cloudflare เห็น
+SERVICE_CLIENT_IP_HEADER=cf-connecting-ip
+SERVICE_MAX_RECORDS=2000
+```
+
+> ⚠️ endpoint นี้ bypass การ auth แบบ strong (Provider ID) — ทั้ง IP และ key ต้องเก็บเป็นความลับ
+> แนะนำ **enforce IP ที่ nginx/Cloudflare ด้วย** (defense in depth) และ rotate key เป็นระยะ
+
 - **โควตา 10,000 record/วัน ต่อ client (hospcode)** — reset เที่ยงคืนเวลาไทย (ICT), เก็บตัวนับใน Postgres
 - ชนโควตา → คืนเท่าที่เหลือ + `truncated: true` · response แนบ `quota: { limit, used, remaining, resetAt }`
 - ปิด/เปิดด้วย env:

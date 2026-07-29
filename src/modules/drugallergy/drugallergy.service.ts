@@ -37,7 +37,21 @@ export class DrugAllergyService {
     private readonly clock: Clock,
     private readonly dailyLimit: number,
     private readonly maxCidsPerRequest: number,
+    private readonly serviceMaxRecords: number = 2000,
   ) {}
+
+  /**
+   * (service/M2M) ค้นตาม CID เดียว → คืน **ทุกคอลัมน์** (รวม HOSPCODE, PID, CID) โดย**ไม่มีโควตา**
+   * ใช้กับ endpoint ภายในที่ auth ด้วย IP + API key
+   */
+  async lookupFull(cid: string): Promise<{ records: Array<Record<string, string | null>>; count: number }> {
+    const c = String(cid ?? '').trim();
+    if (!c) {
+      throw AppError.badRequest('ต้องส่ง cid');
+    }
+    const records = await this.source.queryOneFullRaw(c, this.serviceMaxRecords);
+    return { records, count: records.length };
+  }
 
   /**
    * ค้นประวัติแพ้ยาตาม CID เดียว → คืนทุกคอลัมน์ยกเว้น HOSPCODE, PID, CID

@@ -23,6 +23,15 @@ class FakeSource implements AllergySource {
       HOSPCODE9: null, HOSP9_INFORMHOSP: null, HDC_DATE: '2026-07-13 21:45:13',
     }));
   }
+  async queryOneFullRaw(_cid: string, limit: number): Promise<Record<string, string | null>[]> {
+    const n = Math.min(this.total, limit);
+    // จำลอง: ทุกคอลัมน์ (รวม HOSPCODE, PID, CID)
+    return Array.from({ length: n }, (_, i) => ({
+      HOSPCODE: '10670', PID: `p${i}`, CID: '1100700000001',
+      DATERECORD: '2026-01-01', DRUGALLERGY: 'D1', DNAME: `drug-${i}`,
+      TYPEDX: '2', ALEVEL: '3', SYMPTOM: 'rash',
+    }));
+  }
 }
 
 function harness(total = 5, env: Record<string, string> = {}) {
@@ -36,6 +45,65 @@ async function token(app: ReturnType<typeof harness>['app']): Promise<string> {
   const res = await request(app).post('/auth/session').send({ providerId: 'mock-pharm-001' });
   return res.body.token as string;
 }
+
+describe('POST /api/v1/drugallergy/lookup (service M2M — IP + API key)', () => {
+  function svcHarness(total = 3) {
+    return makeTestHarness({
+      env: {
+        SERVICE_API_KEYS: 'k-abc,k-def',
+        SERVICE_ALLOWLIST_IPS: '203.0.113.5',
+        SERVICE_CLIENT_IP_HEADER: 'cf-connecting-ip',
+      },
+      overrides: { allergySource: new FakeSource(total) },
+    });
+  }
+
+  it('IP ถูก + API key ถูก → 200 คืนทุกคอลัมน์ (รวม HOSPCODE/PID/CID) ไม่มี quota', async () => {
+    const { app } = svcHarness(3);
+    const res = await request(app)
+      .post('/api/v1/drugallergy/lookup')
+      .set('cf-connecting-ip', '203.0.113.5')
+      .set('x-api-key', 'k-abc')
+      .send({ cid: '1100700000001' });
+    expect(res.status).toBe(200);
+    expect(res.body.count).toBe(3);
+    const row = res.body.records[0];
+    expect(row).toHaveProperty('HOSPCODE');
+    expect(row).toHaveProperty('PID');
+    expect(row).toHaveProperty('CID');
+    expect(res.body).not.toHaveProperty('quota'); // ไม่มีโควตา
+  });
+
+  it('IP นอก allowlist → 403', async () => {
+    const { app } = svcHarness();
+    const res = await request(app)
+      .post('/api/v1/drugallergy/lookup')
+      .set('cf-connecting-ip', '8.8.8.8')
+      .set('x-api-key', 'k-abc')
+      .send({ cid: '1100700000001' });
+    expect(res.status).toBe(403);
+  });
+
+  it('API key ผิด → 401', async () => {
+    const { app } = svcHarness();
+    const res = await request(app)
+      .post('/api/v1/drugallergy/lookup')
+      .set('cf-connecting-ip', '203.0.113.5')
+      .set('x-api-key', 'wrong')
+      .send({ cid: '1100700000001' });
+    expect(res.status).toBe(401);
+  });
+
+  it('ไม่ตั้งค่า service (default) → 503 ปิด endpoint', async () => {
+    const { app } = makeTestHarness({ overrides: { allergySource: new FakeSource(3) } });
+    const res = await request(app)
+      .post('/api/v1/drugallergy/lookup')
+      .set('cf-connecting-ip', '203.0.113.5')
+      .set('x-api-key', 'k-abc')
+      .send({ cid: '1100700000001' });
+    expect(res.status).toBe(503);
+  });
+});
 
 describe('POST /api/v1/drugallergy/search (single CID)', () => {
   it('ไม่มี token → 401', async () => {

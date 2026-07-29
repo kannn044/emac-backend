@@ -61,6 +61,21 @@ export function createApp(container: Container): Express {
   router.use('/api/v1', publicCardsRouter({ cards: container.cardsService }));
   router.use(embedRouter({ cards: container.cardsService })); // /embed/card/:token (root)
 
+  // Drug allergy query — มี route ที่ไม่ใช้ session (service M2M) จึงต้อง mount ก่อน
+  // patientsRouter ที่บังคับ authRequired ครอบทั้ง router (ไม่งั้นโดน 401 ก่อนถึง serviceAuth)
+  router.use(
+    '/api/v1',
+    drugAllergyRouter({
+      sessions: container.sessions,
+      service: container.drugAllergyService,
+      serviceAuthConfig: {
+        apiKeys: container.config.service.apiKeys,
+        allowlistIps: container.config.service.allowlistIps,
+        clientIpHeader: container.config.service.clientIpHeader,
+      },
+    }),
+  );
+
   router.use(
     '/api/v1',
     patientsRouter({
@@ -81,14 +96,6 @@ export function createApp(container: Container): Express {
     authCardsRouter({
       sessions: container.sessions,
       cards: container.cardsService,
-    }),
-  );
-  // Drug allergy history query (parquet/DuckDB) — auth ด้วย session Bearer
-  router.use(
-    '/api/v1',
-    drugAllergyRouter({
-      sessions: container.sessions,
-      service: container.drugAllergyService,
     }),
   );
 

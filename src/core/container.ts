@@ -182,6 +182,7 @@ export function buildContainer(
     clock,
     config.drugAllergy.dailyRecordLimit,
     config.drugAllergy.maxCidsPerRequest,
+    config.service.maxRecords,
   );
 
   const patientsService = new PatientsService(patientRepo, auditRepo, clock);

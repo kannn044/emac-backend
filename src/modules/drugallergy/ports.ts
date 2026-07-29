@@ -23,6 +23,12 @@ export interface AllergySource {
    * @returns rows (สูงสุด limit+1 แถว) เป็น Record ดิบ (ค่าเป็น string|null)
    */
   queryOneRaw(cid: string, limit: number): Promise<Record<string, string | null>[]>;
+
+  /**
+   * (service/M2M) ค้นตาม CID เดียว → คืน **ทุกคอลัมน์** ในไฟล์ parquet (รวม HOSPCODE, PID, CID)
+   * ใช้กับ endpoint ภายในที่ auth ด้วย IP+API key
+   */
+  queryOneFullRaw(cid: string, limit: number): Promise<Record<string, string | null>[]>;
 }
 
 /**

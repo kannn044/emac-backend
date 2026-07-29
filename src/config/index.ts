@@ -112,6 +112,22 @@ const ConfigSchema = z.object({
     // จำกัดจำนวน CID ต่อ 1 request (กัน IN list ยาวเกิน)
     maxCidsPerRequest: z.coerce.number().int().positive().default(5000),
   }),
+
+  /**
+   * Service endpoint (M2M) — ดึงข้อมูลแพ้ยาโดยไม่ผ่าน Provider ID
+   * auth ด้วย fixed IP allowlist + API key เท่านั้น (สำหรับ backend ของเราเอง)
+   * ปิดโดย default: ต้องมีทั้ง apiKeys และ allowlistIps ถึงจะเปิด endpoint
+   */
+  service: z.object({
+    // API key ที่ยอมรับ (คั่นด้วย comma, รองรับหลายตัวเพื่อ rotate) — ว่าง = ปิด endpoint
+    apiKeys: z.array(z.string()).default([]),
+    // IP ที่อนุญาต (คั่นด้วย comma, exact match) — ว่าง = ปิด endpoint
+    allowlistIps: z.array(z.string()).default([]),
+    // header ที่ใช้อ่าน client IP จริง (หลัง Cloudflare) — default cf-connecting-ip
+    clientIpHeader: z.string().default('cf-connecting-ip'),
+    // เพดานจำนวน record ต่อ 1 request (กัน response ใหญ่เกิน)
+    maxRecords: z.coerce.number().int().positive().default(2000),
+  }),
 }).superRefine((cfg, ctx) => {
   // AUTH_PROVIDER=real → ต้องมี config MOPH Provider ID ครบ (fail fast ตอน boot)
   if (cfg.adapters.authProvider === 'real') {
@@ -189,6 +205,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
       parquetGlob: env.DRUGALLERGY_PARQUET_GLOB,
       dailyRecordLimit: env.DRUGALLERGY_DAILY_LIMIT,
       maxCidsPerRequest: env.DRUGALLERGY_MAX_CIDS,
+    },
+    service: {
+      apiKeys: parseList(env.SERVICE_API_KEYS),
+      allowlistIps: parseList(env.SERVICE_ALLOWLIST_IPS),
+      clientIpHeader: env.SERVICE_CLIENT_IP_HEADER,
+      maxRecords: env.SERVICE_MAX_RECORDS,
     },
   };
 

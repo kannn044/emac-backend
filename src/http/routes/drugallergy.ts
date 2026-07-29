@@ -13,6 +13,7 @@ import { AppError } from '@/core/errors';
 import type { SessionService } from '@/modules/auth/session.service';
 import type { DrugAllergyService } from '@/modules/drugallergy/drugallergy.service';
 import { authRequired } from '../middleware/auth';
+import { serviceAuth, type ServiceAuthConfig } from '../middleware/service-auth';
 
 function wrap(fn: (req: Request, res: Response) => Promise<void>) {
   return (req: Request, res: Response, next: NextFunction): void => {
@@ -27,6 +28,8 @@ const SearchOneBody = z.object({
 export function drugAllergyRouter(deps: {
   sessions: SessionService;
   service: DrugAllergyService;
+  /** config สำหรับ service endpoint (M2M) — IP allowlist + API key */
+  serviceAuthConfig: ServiceAuthConfig;
 }): Router {
   const router = Router();
 
@@ -44,6 +47,23 @@ export function drugAllergyRouter(deps: {
         cid: parsed.data.cid,
         clientKey: req.ctx!.hospcode,
       });
+      res.json(result);
+    }),
+  );
+
+  /**
+   * (service/M2M) ค้นตาม CID เดียว → คืน **ทุกคอลัมน์** (รวม HOSPCODE, PID, CID) ไม่มีโควตา
+   * auth: fixed IP allowlist + X-API-Key (ไม่ผ่าน Provider ID) — สำหรับ backend ของเราเอง
+   */
+  router.post(
+    '/drugallergy/lookup',
+    serviceAuth(deps.serviceAuthConfig),
+    wrap(async (req, res) => {
+      const parsed = SearchOneBody.safeParse(req.body);
+      if (!parsed.success) {
+        throw AppError.badRequest('Invalid body', parsed.error.flatten());
+      }
+      const result = await deps.service.lookupFull(parsed.data.cid);
       res.json(result);
     }),
   );
