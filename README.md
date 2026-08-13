@@ -129,6 +129,18 @@ SERVICE_MAX_RECORDS=2000
 > ⚠️ endpoint นี้ bypass การ auth แบบ strong (Provider ID) — ทั้ง IP และ key ต้องเก็บเป็นความลับ
 > แนะนำ **enforce IP ที่ nginx/Cloudflare ด้วย** (defense in depth) และ rotate key เป็นระยะ
 
+**Access log** — ทุกการเรียก **ทั้ง `/drugallergy/search` และ `/drugallergy/lookup`** (สำเร็จ + ถูกปฏิเสธ)
+ถูกบันทึกลงตารางเดียวกัน `drugallergy_service_access_log` (migration 0010 + 0011):
+`ts, channel (search|lookup), provider_id, hospcode, client_ip, api_key_id (fingerprint),
+cid (ดิบ), result_count, status, request_id`
+
+- `channel='search'` → ผูก `provider_id` + `hospcode` (จาก session Provider ID)
+- `channel='lookup'` → ผูก `client_ip` + `api_key_id` (M2M)
+
+> ⚠️ ตารางนี้เก็บ **CID ดิบ = PII** → คุมสิทธิ์เข้าถึง DB + ตั้ง retention (แนะนำ purge > 2 ปี) ตาม PDPA
+> ตัวอย่างรายงาน: `SELECT ts, channel, provider_id, client_ip, cid, result_count, status FROM drugallergy_service_access_log ORDER BY ts DESC;`
+> ต้องรัน `npm run migrate` (0010 + 0011) ก่อนใช้
+
 - **โควตา 10,000 record/วัน ต่อ client (hospcode)** — reset เที่ยงคืนเวลาไทย (ICT), เก็บตัวนับใน Postgres
 - ชนโควตา → คืนเท่าที่เหลือ + `truncated: true` · response แนบ `quota: { limit, used, remaining, resetAt }`
 - ปิด/เปิดด้วย env:

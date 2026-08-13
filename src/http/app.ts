@@ -73,6 +73,8 @@ export function createApp(container: Container): Express {
         allowlistIps: container.config.service.allowlistIps,
         clientIpHeader: container.config.service.clientIpHeader,
       },
+      serviceAccessLogRepo: container.serviceAccessLogRepo,
+      logger: container.logger,
     }),
   );
 

@@ -7,6 +7,7 @@ import request from 'supertest';
 import { makeTestHarness } from '../helpers/test-app';
 import type { AllergySource } from '@/modules/drugallergy/ports';
 import type { AllergyRecord } from '@/modules/drugallergy/types';
+import { InMemoryServiceAccessLogRepository } from '@/adapters/memory/service-access-log.memory';
 
 class FakeSource implements AllergySource {
   constructor(private readonly total: number) {}
@@ -35,10 +36,12 @@ class FakeSource implements AllergySource {
 }
 
 function harness(total = 5, env: Record<string, string> = {}) {
-  return makeTestHarness({
+  const accessLog = new InMemoryServiceAccessLogRepository();
+  const h = makeTestHarness({
     env: { DRUGALLERGY_DAILY_LIMIT: '100', ...env },
-    overrides: { allergySource: new FakeSource(total) },
+    overrides: { allergySource: new FakeSource(total), serviceAccessLogRepo: accessLog },
   });
+  return { ...h, accessLog };
 }
 
 async function token(app: ReturnType<typeof harness>['app']): Promise<string> {
@@ -48,15 +51,23 @@ async function token(app: ReturnType<typeof harness>['app']): Promise<string> {
 
 describe('POST /api/v1/drugallergy/lookup (service M2M — IP + API key)', () => {
   function svcHarness(total = 3) {
-    return makeTestHarness({
+    const accessLog = new InMemoryServiceAccessLogRepository();
+    const h = makeTestHarness({
       env: {
         SERVICE_API_KEYS: 'k-abc,k-def',
         SERVICE_ALLOWLIST_IPS: '203.0.113.5',
         SERVICE_CLIENT_IP_HEADER: 'cf-connecting-ip',
       },
-      overrides: { allergySource: new FakeSource(total) },
+      overrides: {
+        allergySource: new FakeSource(total),
+        serviceAccessLogRepo: accessLog,
+      },
     });
+    return { ...h, accessLog };
   }
+
+  /** รอ res.on('finish') hook เขียน log เสร็จ (best-effort async) */
+  const tick = () => new Promise((r) => setImmediate(r));
 
   it('IP ถูก + API key ถูก → 200 คืนทุกคอลัมน์ (รวม HOSPCODE/PID/CID) ไม่มี quota', async () => {
     const { app } = svcHarness(3);
@@ -72,6 +83,41 @@ describe('POST /api/v1/drugallergy/lookup (service M2M — IP + API key)', () =>
     expect(row).toHaveProperty('PID');
     expect(row).toHaveProperty('CID');
     expect(res.body).not.toHaveProperty('quota'); // ไม่มีโควตา
+  });
+
+  it('บันทึก access log เมื่อสำเร็จ (cid + result_count + status + api key fingerprint)', async () => {
+    const { app, accessLog } = svcHarness(3);
+    await request(app)
+      .post('/api/v1/drugallergy/lookup')
+      .set('cf-connecting-ip', '203.0.113.5')
+      .set('x-api-key', 'k-abc')
+      .send({ cid: '1100700000001' });
+    await tick();
+    expect(accessLog.entries).toHaveLength(1);
+    const e = accessLog.entries[0]!;
+    expect(e.channel).toBe('lookup');
+    expect(e.cid).toBe('1100700000001');
+    expect(e.resultCount).toBe(3);
+    expect(e.status).toBe(200);
+    expect(e.clientIp).toBe('203.0.113.5');
+    expect(e.apiKeyId).toBeTruthy(); // fingerprint ของ key (ไม่ใช่ key จริง)
+    expect(e.apiKeyId).not.toBe('k-abc');
+  });
+
+  it('บันทึก access log เมื่อถูกปฏิเสธด้วย (403 IP ผิด → result_count 0)', async () => {
+    const { app, accessLog } = svcHarness();
+    await request(app)
+      .post('/api/v1/drugallergy/lookup')
+      .set('cf-connecting-ip', '8.8.8.8')
+      .set('x-api-key', 'k-abc')
+      .send({ cid: '1100700000001' });
+    await tick();
+    expect(accessLog.entries).toHaveLength(1);
+    const e = accessLog.entries[0]!;
+    expect(e.status).toBe(403);
+    expect(e.cid).toBe('1100700000001'); // ยังบันทึก CID ที่พยายามค้น
+    expect(e.resultCount).toBe(0);
+    expect(e.apiKeyId).toBeNull(); // ไม่ผ่าน auth → ไม่มี fingerprint
   });
 
   it('IP นอก allowlist → 403', async () => {
@@ -153,5 +199,36 @@ describe('POST /api/v1/drugallergy/search (single CID)', () => {
     expect(r.body.count).toBe(20);
     expect(r.body.truncated).toBe(true);
     expect(r.body.quota.remaining).toBe(0);
+  });
+
+  it('บันทึก access log ตารางเดียวกัน (channel=search + provider/hospcode + cid + count)', async () => {
+    const { app, accessLog } = harness(5);
+    const t = await token(app);
+    await request(app)
+      .post('/api/v1/drugallergy/search')
+      .set('Authorization', `Bearer ${t}`)
+      .send({ cid: '1100700000001' });
+    await new Promise((r) => setImmediate(r));
+    const e = accessLog.entries.find((x) => x.channel === 'search');
+    expect(e).toBeTruthy();
+    expect(e!.cid).toBe('1100700000001');
+    expect(e!.resultCount).toBe(5);
+    expect(e!.status).toBe(200);
+    expect(e!.providerId).toBe('mock-pharm-001'); // จาก session
+    expect(e!.hospcode).toBe('10670');
+    expect(e!.apiKeyId).toBeNull(); // search ไม่ใช้ api key
+  });
+
+  it('บันทึก log เมื่อ search ถูกปฏิเสธ (ไม่มี token → 401)', async () => {
+    const { app, accessLog } = harness();
+    await request(app)
+      .post('/api/v1/drugallergy/search')
+      .send({ cid: '1100700000001' });
+    await new Promise((r) => setImmediate(r));
+    const e = accessLog.entries.find((x) => x.channel === 'search');
+    expect(e).toBeTruthy();
+    expect(e!.status).toBe(401);
+    expect(e!.cid).toBe('1100700000001');
+    expect(e!.providerId).toBeNull(); // ไม่ผ่าน auth
   });
 });

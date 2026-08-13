@@ -10,9 +10,16 @@
  * หมายเหตุความปลอดภัย: ควร enforce IP ที่ nginx/Cloudflare ด้วย (defense in depth)
  * เพราะ header cf-connecting-ip เชื่อได้ต่อเมื่อ origin รับ traffic จาก Cloudflare เท่านั้น
  */
-import { timingSafeEqual } from 'node:crypto';
+import { createHash, timingSafeEqual } from 'node:crypto';
 import type { NextFunction, Request, Response } from 'express';
 import { AppError } from '@/core/errors';
+
+declare module 'express-serve-static-core' {
+  interface Request {
+    /** fingerprint สั้นของ API key ที่ใช้ (เซ็ตโดย serviceAuth เมื่อผ่าน) — ใช้ตอน log */
+    serviceApiKeyId?: string;
+  }
+}
 
 export interface ServiceAuthConfig {
   apiKeys: string[];
@@ -26,6 +33,11 @@ function safeEqual(a: string, b: string): boolean {
   const bb = Buffer.from(b);
   if (ab.length !== bb.length) return false;
   return timingSafeEqual(ab, bb);
+}
+
+/** fingerprint สั้นของ API key — ระบุว่าใครเรียก โดยไม่เก็บ key จริง */
+export function apiKeyFingerprint(key: string): string {
+  return createHash('sha256').update(key).digest('hex').slice(0, 10);
 }
 
 /** client IP จาก header ของ Cloudflare (เอาตัวแรกถ้าเป็น list) → fallback req.ip */
@@ -55,9 +67,11 @@ export function serviceAuth(config: ServiceAuthConfig) {
 
       // (2) ตรวจ API key (timing-safe, รองรับหลาย key)
       const key = (req.header('x-api-key') ?? '').trim();
-      if (!key || !config.apiKeys.some((k) => safeEqual(k, key))) {
+      const matched = key ? config.apiKeys.find((k) => safeEqual(k, key)) : undefined;
+      if (!matched) {
         throw AppError.unauthorized('API key ไม่ถูกต้อง');
       }
+      req.serviceApiKeyId = apiKeyFingerprint(matched);
 
       next();
     } catch (err) {

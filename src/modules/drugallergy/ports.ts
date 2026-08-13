@@ -31,6 +31,24 @@ export interface AllergySource {
   queryOneFullRaw(cid: string, limit: number): Promise<Record<string, string | null>[]>;
 }
 
+/** 1 บรรทัด access log ของ endpoint ดึงข้อมูลแพ้ยา (search + lookup, ตารางเดียวกัน) */
+export interface ServiceAccessLogEntry {
+  channel: 'search' | 'lookup';
+  providerId: string | null; // search: providerId ของเภสัช (จาก session)
+  hospcode: string | null; // search: รพ.
+  clientIp: string | null; // lookup: IP ผู้เรียก
+  apiKeyId: string | null; // lookup: fingerprint สั้นของ key (ไม่เก็บ key จริง)
+  cid: string | null; // CID ที่ค้น (ดิบ)
+  resultCount: number;
+  status: number; // HTTP status
+  requestId: string | null;
+}
+
+/** ที่เก็บ access log ของ service endpoint (Postgres / in-memory) */
+export interface ServiceAccessLogRepository {
+  record(entry: ServiceAccessLogEntry): Promise<void>;
+}
+
 /**
  * ตัวนับโควตารายวันต่อ client (atomic)
  * quotaDate = วันที่เขต ICT (YYYY-MM-DD) — reset เที่ยงคืนเวลาไทย

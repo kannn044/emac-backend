@@ -40,11 +40,14 @@ import { InMemoryCardRepository } from '@/adapters/memory/card.memory';
 import type {
   AllergySource,
   AllergyQuotaStore,
+  ServiceAccessLogRepository,
 } from '@/modules/drugallergy/ports';
 import { DrugAllergyService } from '@/modules/drugallergy/drugallergy.service';
 import { DuckDbAllergySource } from '@/adapters/parquet/duckdb-allergy-source';
 import { PgAllergyQuotaStore } from '@/adapters/db/allergy-quota.repository';
 import { InMemoryAllergyQuotaStore } from '@/adapters/memory/allergy-quota.memory';
+import { PgServiceAccessLogRepository } from '@/adapters/db/service-access-log.repository';
+import { InMemoryServiceAccessLogRepository } from '@/adapters/memory/service-access-log.memory';
 
 /**
  * Container — สิ่งที่ทุก module ใช้ร่วมกัน (ประกอบครั้งเดียวที่ composition root)
@@ -71,6 +74,8 @@ export interface Container {
   cardsService: CardService;
   // Drug allergy history query (parquet/DuckDB)
   drugAllergyService: DrugAllergyService;
+  // Access log ของ service endpoint (/drugallergy/lookup)
+  serviceAccessLogRepo: ServiceAccessLogRepository;
   shutdown(): Promise<void>;
 }
 
@@ -84,6 +89,7 @@ export interface ContainerOverrides {
   db?: Pool;
   allergySource?: AllergySource;
   allergyQuota?: AllergyQuotaStore;
+  serviceAccessLogRepo?: ServiceAccessLogRepository;
   healthProbes?: HealthProbe[];
   auth?: AuthProvider;
   keyStore?: SigningKeyStore;
@@ -185,6 +191,12 @@ export function buildContainer(
     config.service.maxRecords,
   );
 
+  const serviceAccessLogRepo: ServiceAccessLogRepository =
+    overrides.serviceAccessLogRepo ??
+    (useMemoryData
+      ? new InMemoryServiceAccessLogRepository()
+      : new PgServiceAccessLogRepository(db));
+
   const patientsService = new PatientsService(patientRepo, auditRepo, clock);
   const verificationService = new VerificationService(
     patientRepo,
@@ -211,6 +223,7 @@ export function buildContainer(
     verificationService,
     cardsService,
     drugAllergyService,
+    serviceAccessLogRepo,
     async shutdown() {
       await db.end().catch(() => undefined);
     },

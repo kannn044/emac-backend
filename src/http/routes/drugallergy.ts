@@ -14,6 +14,9 @@ import type { SessionService } from '@/modules/auth/session.service';
 import type { DrugAllergyService } from '@/modules/drugallergy/drugallergy.service';
 import { authRequired } from '../middleware/auth';
 import { serviceAuth, type ServiceAuthConfig } from '../middleware/service-auth';
+import { serviceAccessLog } from '../middleware/service-access-log';
+import type { ServiceAccessLogRepository } from '@/modules/drugallergy/ports';
+import type { Logger } from '@/core/logger';
 
 function wrap(fn: (req: Request, res: Response) => Promise<void>) {
   return (req: Request, res: Response, next: NextFunction): void => {
@@ -30,12 +33,22 @@ export function drugAllergyRouter(deps: {
   service: DrugAllergyService;
   /** config สำหรับ service endpoint (M2M) — IP allowlist + API key */
   serviceAuthConfig: ServiceAuthConfig;
+  /** ที่เก็บ access log ของ service endpoint */
+  serviceAccessLogRepo: ServiceAccessLogRepository;
+  logger?: Logger;
 }): Router {
   const router = Router();
 
   // ค้นตาม CID เดียว — คืนทุกคอลัมน์ยกเว้น HOSPCODE, PID, CID
   router.post(
     '/drugallergy/search',
+    // access log ตัวแรก — จับทุกผลลัพธ์ (รวมที่ authRequired ปฏิเสธ 401)
+    serviceAccessLog({
+      repo: deps.serviceAccessLogRepo,
+      channel: 'search',
+      clientIpHeader: deps.serviceAuthConfig.clientIpHeader,
+      logger: deps.logger,
+    }),
     authRequired(deps.sessions),
     wrap(async (req, res) => {
       const parsed = SearchOneBody.safeParse(req.body);
@@ -47,6 +60,7 @@ export function drugAllergyRouter(deps: {
         cid: parsed.data.cid,
         clientKey: req.ctx!.hospcode,
       });
+      res.locals.resultCount = result.count; // ให้ access log บันทึกจำนวนที่คืน
       res.json(result);
     }),
   );
@@ -57,6 +71,13 @@ export function drugAllergyRouter(deps: {
    */
   router.post(
     '/drugallergy/lookup',
+    // access log ต้องเป็นตัวแรก — hook res.on('finish') จับทุกผลลัพธ์ (รวมที่ serviceAuth ปฏิเสธ)
+    serviceAccessLog({
+      repo: deps.serviceAccessLogRepo,
+      channel: 'lookup',
+      clientIpHeader: deps.serviceAuthConfig.clientIpHeader,
+      logger: deps.logger,
+    }),
     serviceAuth(deps.serviceAuthConfig),
     wrap(async (req, res) => {
       const parsed = SearchOneBody.safeParse(req.body);
@@ -64,6 +85,7 @@ export function drugAllergyRouter(deps: {
         throw AppError.badRequest('Invalid body', parsed.error.flatten());
       }
       const result = await deps.service.lookupFull(parsed.data.cid);
+      res.locals.resultCount = result.count; // ให้ access log บันทึกจำนวนที่คืน
       res.json(result);
     }),
   );
