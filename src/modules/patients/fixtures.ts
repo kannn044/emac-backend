@@ -3,14 +3,18 @@
  * ~12 ราย หลากเคส (SJS/TEN, Allopurinol, NSAID, antibiotic ฯลฯ) + demographics ครบสำหรับพรีเซนต์
  * ส่วนใหญ่ hospcode 10670 (โปรไฟล์ demo) + บางส่วน 11292 (ทดสอบ tenant isolation)
  * สถานะส่วนใหญ่ pending เพื่อสาธิต verify → ออกบัตร; มี verified/rejected อย่างละ 1
+ *
+ * ⚠️ ข้อมูลบุคคลทั้งหมด (ชื่อ/CID/ที่อยู่) เป็น "ข้อมูลสมมติ" ที่สร้างขึ้นเพื่อสาธิตเท่านั้น
+ *    ไม่ใช่ข้อมูลผู้ป่วยจริง — CID ขึ้นต้น 99999 (รหัสจังหวัดที่ไม่มีจริง) เพื่อกันสับสนกับเลขจริง
+ *    ส่วนข้อมูลคลินิก (ยา/อาการ/biomarker) เป็นรูปแบบทางการแพทย์มาตรฐาน ไม่ผูกกับบุคคลใด
  */
 import type { PatientRecord } from './types';
 
 export const SEED_PATIENTS: PatientRecord[] = [
   {
-    id: '1', hospcode: '10670', pid: '00012345', cid: '1100701234567', hn: 'HN-2026-0001',
-    fullName: 'นายสมชาย เทวกุล', sex: 'male', birthDate: '1975-03-14',
-    address: '128/5 ถ.พรานนก แขวงศิริราช เขตบางกอกน้อย กรุงเทพฯ 10700',
+    id: '1', hospcode: '10670', pid: '00012345', cid: '9999900000001', hn: 'HN-2026-0001',
+    fullName: 'นายสมหมาย ใจดี', sex: 'male', birthDate: '1975-03-14',
+    address: '99/1 ถ.ประชาสงเคราะห์ แขวงดินแดง เขตดินแดง กรุงเทพฯ 10400',
     diagcode: 'L511', datetimeAdmit: '2026-06-12',
     suspectDrugs: [
       { didstd: '100001', dname: 'CARBAMAZEPINE 200 MG TABLET', dateServ: '2026-06-05', group: 'Carbamazepine' },
@@ -21,9 +25,9 @@ export const SEED_PATIENTS: PatientRecord[] = [
     sourceLoadedAt: '2026-06-13T02:00:00.000Z', updatedAt: '2026-06-13T02:00:00.000Z',
   },
   {
-    id: '2', hospcode: '10670', pid: '00023456', cid: '1100702345678', hn: 'HN-2026-0002',
-    fullName: 'นางสาวปิยะนุช อินทร์แก้ว', sex: 'female', birthDate: '1990-11-02',
-    address: '55 หมู่ 4 ต.บางกร่าง อ.เมือง จ.นนทบุรี 11000',
+    id: '2', hospcode: '10670', pid: '00023456', cid: '9999900000002', hn: 'HN-2026-0002',
+    fullName: 'นางสาวบุปผา แก้วมณี', sex: 'female', birthDate: '1990-11-02',
+    address: '12/34 หมู่ 5 ต.บางรักพัฒนา อ.บางบัวทอง จ.นนทบุรี 11110',
     diagcode: 'L512', datetimeAdmit: '2026-06-18',
     suspectDrugs: [
       { didstd: '100010', dname: 'ALLOPURINOL 300 MG TABLET', dateServ: '2026-06-01', group: 'Allopurinol' },
@@ -33,9 +37,9 @@ export const SEED_PATIENTS: PatientRecord[] = [
     sourceLoadedAt: '2026-06-19T02:00:00.000Z', updatedAt: '2026-06-19T02:00:00.000Z',
   },
   {
-    id: '3', hospcode: '10670', pid: '00034567', cid: '1100703456789', hn: 'HN-2026-0003',
-    fullName: 'เด็กชายกิตติภพ ศรีสุข', sex: 'male', birthDate: '2015-07-21',
-    address: '9/1 ซ.จรัญสนิทวงศ์ 13 แขวงวัดท่าพระ เขตบางกอกใหญ่ กรุงเทพฯ 10600',
+    id: '3', hospcode: '10670', pid: '00034567', cid: '9999900000003', hn: 'HN-2026-0003',
+    fullName: 'เด็กชายธนา สุขใจ', sex: 'male', birthDate: '2015-07-21',
+    address: '45 ซ.รามคำแหง 24 แขวงหัวหมาก เขตบางกะปิ กรุงเทพฯ 10240',
     diagcode: 'L519', datetimeAdmit: '2026-06-20',
     suspectDrugs: [
       { didstd: '100020', dname: 'AMOXICILLIN 500 MG CAPSULE', dateServ: '2026-06-15', group: 'Penicillins' },
@@ -46,9 +50,9 @@ export const SEED_PATIENTS: PatientRecord[] = [
     sourceLoadedAt: '2026-06-21T02:00:00.000Z', updatedAt: '2026-06-21T02:00:00.000Z',
   },
   {
-    id: '4', hospcode: '10670', pid: '00045678', cid: '1100704567890', hn: 'HN-2026-0004',
-    fullName: 'นางมาลี วงศ์ทอง', sex: 'female', birthDate: '1962-01-30',
-    address: '212 ถ.อิสรภาพ แขวงบ้านช่างหล่อ เขตบางกอกน้อย กรุงเทพฯ 10700',
+    id: '4', hospcode: '10670', pid: '00045678', cid: '9999900000004', hn: 'HN-2026-0004',
+    fullName: 'นางวิไล ทองคำ', sex: 'female', birthDate: '1962-01-30',
+    address: '7/8 ถ.ลาดพร้าว แขวงจอมพล เขตจตุจักร กรุงเทพฯ 10900',
     diagcode: 'L511', datetimeAdmit: '2026-05-28',
     suspectDrugs: [
       { didstd: '100030', dname: 'CO-TRIMOXAZOLE 960 MG TABLET', dateServ: '2026-05-20', group: 'Sulfonamides' },
@@ -58,9 +62,9 @@ export const SEED_PATIENTS: PatientRecord[] = [
     sourceLoadedAt: '2026-05-29T02:00:00.000Z', updatedAt: '2026-06-02T09:30:00.000Z',
   },
   {
-    id: '5', hospcode: '10670', pid: '00056789', cid: '1100705678901', hn: 'HN-2026-0005',
-    fullName: 'นายอนุชา ตันติวงศ์', sex: 'male', birthDate: '1983-09-09',
-    address: '77/12 ถ.เจริญกรุง แขวงยานนาวา เขตสาทร กรุงเทพฯ 10120',
+    id: '5', hospcode: '10670', pid: '00056789', cid: '9999900000005', hn: 'HN-2026-0005',
+    fullName: 'นายชูเกียรติ พงษ์ไพร', sex: 'male', birthDate: '1983-09-09',
+    address: '203 ถ.เพชรบุรี แขวงถนนเพชรบุรี เขตราชเทวี กรุงเทพฯ 10400',
     diagcode: 'L512', datetimeAdmit: '2026-06-22',
     suspectDrugs: [
       { didstd: '100040', dname: 'PHENYTOIN 100 MG CAPSULE', dateServ: '2026-06-10', group: 'Phenytoin' },
@@ -70,9 +74,9 @@ export const SEED_PATIENTS: PatientRecord[] = [
     sourceLoadedAt: '2026-06-23T02:00:00.000Z', updatedAt: '2026-06-24T14:10:00.000Z',
   },
   {
-    id: '6', hospcode: '10670', pid: '00067890', cid: '1100706789012', hn: 'HN-2026-0006',
-    fullName: 'นางสาวศิริพร แสงจันทร์', sex: 'female', birthDate: '1998-05-17',
-    address: '43 หมู่ 2 ต.ศาลายา อ.พุทธมณฑล จ.นครปฐม 73170',
+    id: '6', hospcode: '10670', pid: '00067890', cid: '9999900000006', hn: 'HN-2026-0006',
+    fullName: 'นางสาวกัลยา ศรีสมบูรณ์', sex: 'female', birthDate: '1998-05-17',
+    address: '88 หมู่ 3 ต.คลองหนึ่ง อ.คลองหลวง จ.ปทุมธานี 12120',
     diagcode: 'L519', datetimeAdmit: '2026-06-25',
     suspectDrugs: [
       { didstd: '100050', dname: 'CEFTRIAXONE 1 G INJECTION', dateServ: '2026-06-24', group: 'Cephalosporins' },
@@ -83,9 +87,9 @@ export const SEED_PATIENTS: PatientRecord[] = [
     sourceLoadedAt: '2026-06-26T02:00:00.000Z', updatedAt: '2026-06-26T02:00:00.000Z',
   },
   {
-    id: '7', hospcode: '10670', pid: '00078901', cid: '1100707890123', hn: 'HN-2026-0007',
-    fullName: 'นายประเสริฐ บุญมา', sex: 'male', birthDate: '1957-12-05',
-    address: '5/89 ถ.บรมราชชนนี แขวงอรุณอมรินทร์ เขตบางกอกน้อย กรุงเทพฯ 10700',
+    id: '7', hospcode: '10670', pid: '00078901', cid: '9999900000007', hn: 'HN-2026-0007',
+    fullName: 'นายมานพ เงินทอง', sex: 'male', birthDate: '1957-12-05',
+    address: '16/2 ถ.จันทน์ แขวงทุ่งวัดดอน เขตสาทร กรุงเทพฯ 10120',
     diagcode: 'L511', datetimeAdmit: '2026-06-27',
     suspectDrugs: [
       { didstd: '100011', dname: 'ALLOPURINOL 100 MG TABLET', dateServ: '2026-06-18', group: 'Allopurinol' },
@@ -96,9 +100,9 @@ export const SEED_PATIENTS: PatientRecord[] = [
     sourceLoadedAt: '2026-06-28T02:00:00.000Z', updatedAt: '2026-06-28T02:00:00.000Z',
   },
   {
-    id: '8', hospcode: '10670', pid: '00089012', cid: '1100708901234', hn: 'HN-2026-0008',
-    fullName: 'นางกนกวรรณ พูนสิน', sex: 'female', birthDate: '1971-08-25',
-    address: '19 ซ.สุขุมวิท 71 แขวงพระโขนงเหนือ เขตวัฒนา กรุงเทพฯ 10110',
+    id: '8', hospcode: '10670', pid: '00089012', cid: '9999900000008', hn: 'HN-2026-0008',
+    fullName: 'นางกนกพร ผ่องใส', sex: 'female', birthDate: '1971-08-25',
+    address: '5 ซ.อ่อนนุช 17 แขวงสวนหลวง เขตสวนหลวง กรุงเทพฯ 10250',
     diagcode: 'L512', datetimeAdmit: '2026-06-28',
     suspectDrugs: [
       { didstd: '100080', dname: 'PHENOBARBITAL 60 MG TABLET', dateServ: '2026-06-19', group: 'Phenobarbital' },
@@ -108,9 +112,9 @@ export const SEED_PATIENTS: PatientRecord[] = [
     sourceLoadedAt: '2026-06-29T02:00:00.000Z', updatedAt: '2026-06-29T02:00:00.000Z',
   },
   {
-    id: '9', hospcode: '10670', pid: '00090123', cid: '1100709012345', hn: 'HN-2026-0009',
-    fullName: 'นายวีรภัทร จันทโชติ', sex: 'male', birthDate: '2001-02-11',
-    address: '88/8 ถ.ประชาราษฎร์ สาย 1 แขวงบางซื่อ เขตบางซื่อ กรุงเทพฯ 10800',
+    id: '9', hospcode: '10670', pid: '00090123', cid: '9999900000009', hn: 'HN-2026-0009',
+    fullName: 'นายพิชัย รุ่งเรือง', sex: 'male', birthDate: '2001-02-11',
+    address: '120 ถ.กรุงเทพ-นนท์ แขวงบางซื่อ เขตบางซื่อ กรุงเทพฯ 10800',
     diagcode: 'L519', datetimeAdmit: '2026-06-29',
     suspectDrugs: [
       { didstd: '100090', dname: 'PENICILLIN G SODIUM 1 MU INJECTION', dateServ: '2026-06-27', group: 'Penicillins' },
@@ -120,9 +124,9 @@ export const SEED_PATIENTS: PatientRecord[] = [
     sourceLoadedAt: '2026-06-30T02:00:00.000Z', updatedAt: '2026-06-30T02:00:00.000Z',
   },
   {
-    id: '10', hospcode: '10670', pid: '00101234', cid: '1100710123456', hn: 'HN-2026-0010',
-    fullName: 'นางสาวธัญชนก เรืองศรี', sex: 'female', birthDate: '1995-06-30',
-    address: '3/45 ถ.ราชวิถี แขวงทุ่งพญาไท เขตราชเทวี กรุงเทพฯ 10400',
+    id: '10', hospcode: '10670', pid: '00101234', cid: '9999900000010', hn: 'HN-2026-0010',
+    fullName: 'นางสาวนภา ดาวเรือง', sex: 'female', birthDate: '1995-06-30',
+    address: '9/9 ถ.พหลโยธิน แขวงสามเสนใน เขตพญาไท กรุงเทพฯ 10400',
     diagcode: 'L511', datetimeAdmit: '2026-06-30',
     suspectDrugs: [
       { didstd: '100100', dname: 'MEFENAMIC ACID 500 MG CAPSULE', dateServ: '2026-06-26', group: 'Mefenamic acid' },
@@ -135,9 +139,9 @@ export const SEED_PATIENTS: PatientRecord[] = [
   },
   // ---- คนละโรงพยาบาล (11292) — ทดสอบ tenant isolation ----
   {
-    id: '11', hospcode: '11292', pid: '00111234', cid: '1129201112345', hn: 'CM-2026-0101',
-    fullName: 'นายบุญส่ง คำแก้ว', sex: 'male', birthDate: '1968-04-18',
-    address: '210 ถ.สุเทพ ต.สุเทพ อ.เมือง จ.เชียงใหม่ 50200',
+    id: '11', hospcode: '11292', pid: '00111234', cid: '9999900000011', hn: 'CM-2026-0101',
+    fullName: 'นายบุญมี คำดี', sex: 'male', birthDate: '1968-04-18',
+    address: '150 ถ.ห้วยแก้ว ต.สุเทพ อ.เมือง จ.เชียงใหม่ 50200',
     diagcode: 'L511', datetimeAdmit: '2026-06-19',
     suspectDrugs: [
       { didstd: '100001', dname: 'CARBAMAZEPINE 200 MG TABLET', dateServ: '2026-06-10', group: 'Carbamazepine' },
@@ -147,9 +151,9 @@ export const SEED_PATIENTS: PatientRecord[] = [
     sourceLoadedAt: '2026-06-20T02:00:00.000Z', updatedAt: '2026-06-20T02:00:00.000Z',
   },
   {
-    id: '12', hospcode: '11292', pid: '00121234', cid: '1129201212345', hn: 'CM-2026-0102',
-    fullName: 'นางเพ็ญนภา ไชยวงศ์', sex: 'female', birthDate: '1979-10-12',
-    address: '66 หมู่ 6 ต.ช้างเผือก อ.เมือง จ.เชียงใหม่ 50300',
+    id: '12', hospcode: '11292', pid: '00121234', cid: '9999900000012', hn: 'CM-2026-0102',
+    fullName: 'นางเพ็ญศรี ใจงาม', sex: 'female', birthDate: '1979-10-12',
+    address: '23 หมู่ 4 ต.หนองหอย อ.เมือง จ.เชียงใหม่ 50000',
     diagcode: 'L512', datetimeAdmit: '2026-06-21',
     suspectDrugs: [
       { didstd: '100060', dname: 'VANCOMYCIN 1 G INJECTION', dateServ: '2026-06-20', group: 'Vancomycin' },

@@ -83,7 +83,7 @@ describe('cards API (P5) — issue / verify / embed', () => {
     expect(res.text).toContain('ผลการ');
     expect(res.text).toContain('ใช่แน่นอน'); // legend/assessment label
     // ข้อมูลผู้ป่วย + ยา
-    expect(res.text).toContain('นายสมชาย เทวกุล');
+    expect(res.text).toContain('นายสมหมาย ใจดี');
     expect(res.text).toContain('CARBAMAZEPINE 200 MG TABLET');
     expect(res.text).toContain('โรงพยาบาลศิริราช');
   });
