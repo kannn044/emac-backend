@@ -189,6 +189,31 @@ test/          unit / e2e + helpers/fixtures
 **หลักการ:** business logic ไม่ผูกกับ framework/DB/external service — สลับ mock ↔ ของจริงที่
 `buildContainer` ที่เดียว (เลือกตาม env)
 
+## ข้อมูลผู้ป่วย mock
+
+ชุด demo 12 รายใช้ชื่อ `ผู้ป่วยทดสอบ 001–012`, PID `MOCK-PID-001`, HN `MOCK-HN-001`,
+ไม่มี CID/วันเกิด และที่อยู่ระบุว่าเป็นข้อมูลทดสอบ ข้อมูลยา/อาการยังคงใช้สาธิตได้
+
+สำหรับฐานข้อมูลเดิม หลังอัปโหลดโค้ดใหม่:
+
+```bash
+cd /home/gdata/emac-backend
+npm run migrate
+pm2 restart emac-api
+```
+
+Migration `0012_label_mock_patients.sql` เปลี่ยนเฉพาะแถวที่ตรงกับ natural key,
+โรงพยาบาล, PID, CID, HN และชื่อของ seed เก่าทั้งชุด ไม่เปลี่ยนแถวอื่น
+คง primary key, ข้อมูลคลินิก, สถานะและหมายเหตุไว้ พร้อมเปลี่ยน natural key ให้ตรงกับ PID ใหม่
+ถ้าเคยแก้ชื่อหรือรหัสของ seed เดิมไว้ แถวนั้นจะไม่ถูกเปลี่ยนอัตโนมัติ
+
+สำหรับฐานข้อมูลใหม่ รัน `npm run migrate` **ก่อน** `npm run seed:patients`
+การ migrate ไม่เพิ่มผู้ป่วยเอง ส่วน seed จะข้าม natural key ที่มีอยู่แล้ว
+อย่า seed ชุดใหม่ลงฐานข้อมูลเก่าก่อน migrate เพราะจะสร้างแถวซ้ำคนละ natural key
+
+บัตรที่ออกแล้วและข้อมูลที่ลงนามเป็น snapshot เดิม ไม่ถูกแก้ย้อนหลังโดย migration นี้
+ชื่อและรหัสเก่าอาจยังปรากฏบนบัตรเหล่านั้น; บัตรที่ออกใหม่ใช้ข้อมูล mock ใหม่
+
 ## ETL Ingestion (P1)
 
 ETL จริงรันบน server แยก (DuckDB) แล้ว "โยน" ไฟล์ **parquet** มาวางที่ `data/inbox/`

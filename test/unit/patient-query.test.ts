@@ -56,9 +56,9 @@ describe('InMemoryPatientQueryRepository — tenant scope + filters', () => {
     const grp = await repo().list('10670', q({ group: 'Carbamazepine' }));
     expect(grp.items.every((i) => i.groups.includes('Carbamazepine'))).toBe(true);
 
-    const byHn = await repo().list('10670', q({ q: 'HN-2026-0002' }));
+    const byHn = await repo().list('10670', q({ q: 'MOCK-HN-002' }));
     expect(byHn.total).toBe(1);
-    expect(byHn.items[0]!.hn).toBe('HN-2026-0002');
+    expect(byHn.items[0]!.hn).toBe('MOCK-HN-002');
   });
 
   it('findById respects tenant (no cross-hospcode leak)', async () => {
