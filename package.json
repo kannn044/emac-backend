@@ -18,7 +18,8 @@
     "migrate": "tsx src/db/migrate.ts",
     "seed:patients": "tsx scripts/seed-patients.ts",
     "etl:import": "tsx src/modules/etl/cli.ts",
-    "etl:gen-mock": "tsx scripts/gen-mock-parquet.ts"
+    "etl:gen-mock": "tsx scripts/gen-mock-parquet.ts",
+    "audit:mock-patients": "tsx scripts/audit-mock-patients.ts"
   },
   "dependencies": {
     "@dsnp/parquetjs": "^1.8.0",

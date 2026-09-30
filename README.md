@@ -202,10 +202,21 @@ npm run migrate
 pm2 restart emac-api
 ```
 
-Migration `0012_label_mock_patients.sql` เปลี่ยนเฉพาะแถวที่ตรงกับ natural key,
-โรงพยาบาล, PID, CID, HN และชื่อของ seed เก่าทั้งชุด ไม่เปลี่ยนแถวอื่น
-คง primary key, ข้อมูลคลินิก, สถานะและหมายเหตุไว้ พร้อมเปลี่ยน natural key ให้ตรงกับ PID ใหม่
-ถ้าเคยแก้ชื่อหรือรหัสของ seed เดิมไว้ แถวนั้นจะไม่ถูกเปลี่ยนอัตโนมัติ
+Migration `0014_normalize_all_legacy_mock_patients.sql` ครอบคลุม seed เก่า 12 ราย
+ทุกชื่อ/CID ที่เคยใช้ โดยจับคู่ natural key + โรงพยาบาล + PID + HN
+แทนการตรวจชื่อแบบ migration 0012/0013 คง primary key, ข้อมูลคลินิก, สถานะและหมายเหตุไว้
+พร้อมเปลี่ยน natural key ให้ตรงกับ PID ใหม่ แถวที่ไม่ตรงกับรหัสอ้างอิงชุด seed จะไม่ถูกแก้
+
+หลัง migrate ตรวจฐานข้อมูลจริงแบบ read-only:
+
+```bash
+npm run audit:mock-patients
+```
+
+`remainingPatients` ต้องเป็น 0 หากฐานข้อมูลนี้มีเฉพาะชุด mock ดังกล่าว
+หากมากกว่า 0 ให้ตรวจ `remainingPatientRowIds` ต่อ (คำสั่งไม่พิมพ์ชื่อ/PID/HN)
+`historicalCardsWithOldIdentity` นับบัตร snapshot เดิมที่ยังมีข้อมูลระบุตัวตนรูปแบบเก่า
+คำสั่งคืน exit code 1 ถ้ามีข้อมูลเหลือ ไม่ได้แปลว่าการ migrate ล้มเหลว
 
 สำหรับฐานข้อมูลใหม่ รัน `npm run migrate` **ก่อน** `npm run seed:patients`
 การ migrate ไม่เพิ่มผู้ป่วยเอง ส่วน seed จะข้าม natural key ที่มีอยู่แล้ว
