@@ -1,3 +1,6 @@
+> สำหรับ deployment ปัจจุบันสอง server ใช้ `DEPLOY-PM2.md` ในโฟลเดอร์นี้
+> เนื้อหาด้านล่างเป็น topology เก่า ไม่ใช้กับ api-mophlink.moph.go.th/drugallergy
+
 # Deploy eMAC บน Production — https://emac.moph.go.th
 
 ต่างจาก POC (`deploy/DEPLOY.md`) ตรงที่ domain นี้เป็นของ eMAC **เอง** (ไม่แชร์ path กับ service อื่น)

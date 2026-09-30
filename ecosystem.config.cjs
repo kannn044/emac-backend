@@ -1,11 +1,4 @@
-/**
- * PM2 config — eMAC Drug Allergy Card API (POC)
- *   pm2 start ecosystem.config.cjs
- *   pm2 logs emac-api   |   pm2 restart emac-api   |   pm2 save
- *
- * อ่านค่า runtime จาก .env (index.ts โหลด dotenv ให้) — ดู deploy/.env.production.example
- * ฟังที่ 127.0.0.1:3100 ; nginx proxy /emac/api/ → :3100 (strip prefix)
- */
+// /home/gdata/emac-backend: database and secrets remain in .env.
 module.exports = {
   apps: [
     {
@@ -13,7 +6,14 @@ module.exports = {
       cwd: __dirname,
       script: 'npm',
       args: 'run start',
-      env: { NODE_ENV: 'production' },
+      env: {
+        NODE_ENV: 'production',
+        PORT: '3100',
+        HTTP_BASE_PATH: '/drugallergy',
+        PUBLIC_BASE_URL: 'https://api-mophlink.moph.go.th/drugallergy',
+        TRUST_PROXY: 'true',
+        AUTH_PROVIDER: 'mock',
+      },
       autorestart: true,
       max_restarts: 10,
       time: true,
