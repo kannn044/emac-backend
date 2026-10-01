@@ -1,3 +1,5 @@
+import { InMemoryAllergyQuotaStore } from '@/adapters/memory/allergy-quota.memory';
+import { InMemoryServiceAccessLogRepository } from '@/adapters/memory/service-access-log.memory';
 import pino from 'pino';
 import type { Express } from 'express';
 import { loadConfig } from '@/config/index';
@@ -53,6 +55,8 @@ export function makeTestHarness(
     db: { end: async () => undefined, query: async () => undefined } as never,
     healthProbes: opts.probes ?? [new StubProbe('postgres', true)],
     keyStore: new InMemorySigningKeyStore(),
+    allergyQuota: new InMemoryAllergyQuotaStore(),
+    serviceAccessLogRepo: new InMemoryServiceAccessLogRepository(),
     ...opts.overrides,
   };
   const container = buildContainer(config, overrides);

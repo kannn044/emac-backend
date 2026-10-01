@@ -29,8 +29,10 @@ const SearchOneBody = z.object({
 });
 
 export function drugAllergyRouter(deps: {
+  dataMode: 'mock' | 'real';
   sessions: SessionService;
   service: DrugAllergyService;
+  searchService: DrugAllergyService;
   /** config สำหรับ service endpoint (M2M) — IP allowlist + API key */
   serviceAuthConfig: ServiceAuthConfig;
   /** ที่เก็บ access log ของ service endpoint */
@@ -38,6 +40,14 @@ export function drugAllergyRouter(deps: {
   logger?: Logger;
 }): Router {
   const router = Router();
+  router.use('/drugallergy/search', (_req, res, next) => {
+    res.setHeader('X-Drugallergy-Data-Mode', 'real');
+    next();
+  });
+  router.use('/drugallergy/lookup', (_req, res, next) => {
+    res.setHeader('X-Drugallergy-Data-Mode', deps.dataMode);
+    next();
+  });
 
   // ค้นตาม CID เดียว — คืนทุกคอลัมน์ยกเว้น HOSPCODE, PID, CID
   router.post(
@@ -56,7 +66,7 @@ export function drugAllergyRouter(deps: {
         throw AppError.badRequest('Invalid body', parsed.error.flatten());
       }
       // client = hospcode ของผู้เรียก (req.ctx เซ็ตโดย authRequired เสมอ)
-      const result = await deps.service.searchOne({
+      const result = await deps.searchService.searchOne({
         cid: parsed.data.cid,
         clientKey: req.ctx!.hospcode,
       });

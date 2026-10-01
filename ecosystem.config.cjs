@@ -12,7 +12,6 @@ module.exports = {
         HTTP_BASE_PATH: '/drugallergy',
         PUBLIC_BASE_URL: 'https://api-mophlink.moph.go.th/drugallergy',
         TRUST_PROXY: 'true',
-        AUTH_PROVIDER: 'mock',
       },
       autorestart: true,
       max_restarts: 10,

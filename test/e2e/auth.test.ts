@@ -3,13 +3,13 @@ import request from 'supertest';
 import { makeTestApp } from '../helpers/test-app';
 
 async function loginAs(app: ReturnType<typeof makeTestApp>, providerId: string) {
-  return request(app).post('/auth/session').send({ providerId });
+  return request(app).post('/api/v1/portal/auth/session').send({ providerId });
 }
 
 describe('auth (P2 mock) — login / session / identity', () => {
   it('lists mock provider profiles for dev login', async () => {
     const app = makeTestApp();
-    const res = await request(app).get('/auth/providers');
+    const res = await request(app).get('/api/v1/portal/auth/providers');
     expect(res.status).toBe(200);
     const ids = res.body.providers.map((p: { providerId: string }) => p.providerId);
     expect(ids).toContain('mock-pharm-001');
@@ -31,18 +31,18 @@ describe('auth (P2 mock) — login / session / identity', () => {
     expect(b.body.profile.keyId).toBe(a.body.profile.keyId);
   });
 
-  it('P2-6: protected /auth/me without token → 401', async () => {
+  it('P2-6: protected /api/v1/portal/auth/me without token → 401', async () => {
     const app = makeTestApp();
-    const res = await request(app).get('/auth/me');
+    const res = await request(app).get('/api/v1/portal/auth/me');
     expect(res.status).toBe(401);
     expect(res.body.error.code).toBe('UNAUTHORIZED');
   });
 
-  it('accepts a valid token on /auth/me', async () => {
+  it('accepts a valid token on /api/v1/portal/auth/me', async () => {
     const app = makeTestApp();
     const login = await loginAs(app, 'mock-pharm-001');
     const res = await request(app)
-      .get('/auth/me')
+      .get('/api/v1/portal/auth/me')
       .set('Authorization', `Bearer ${login.body.token}`);
     expect(res.status).toBe(200);
     expect(res.body.identity.providerId).toBe('mock-pharm-001');
@@ -52,7 +52,7 @@ describe('auth (P2 mock) — login / session / identity', () => {
   it('rejects a garbage token → 401', async () => {
     const app = makeTestApp();
     const res = await request(app)
-      .get('/auth/me')
+      .get('/api/v1/portal/auth/me')
       .set('Authorization', 'Bearer not.a.real.token');
     expect(res.status).toBe(401);
   });

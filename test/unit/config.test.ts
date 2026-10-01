@@ -8,6 +8,19 @@ const VALID: NodeJS.ProcessEnv = {
 };
 
 describe('config (P0-3)', () => {
+  it('keeps third-party data mode independent from login and portal storage', () => {
+    expect(loadConfig(VALID).drugAllergy.dataMode).toBe('real');
+    const cfg = loadConfig({ ...VALID, DRUGALLERGY_DATA_MODE: 'mock', DATA_STORE: 'postgres' });
+    expect(cfg.drugAllergy.dataMode).toBe('mock');
+    expect(cfg.adapters.dataStore).toBe('postgres');
+    expect(cfg.adapters.authProvider).toBe('mock');
+    expect(() => loadConfig({ ...VALID, DRUGALLERGY_DATA_MODE: 'typo' })).toThrow();
+  });
+  it('allows an explicit mock portal independent of legacy AUTH_PROVIDER=real', () => {
+    const cfg = loadConfig({ ...VALID, AUTH_PROVIDER: 'real', PORTAL_AUTH_PROVIDER: 'mock' });
+    expect(cfg.adapters.portalAuthProvider).toBe('mock');
+    expect(() => loadConfig({ ...VALID, PORTAL_AUTH_PROVIDER: 'real' })).toThrow(/MOPH_PROVIDER/);
+  });
   it('loads valid config with defaults', () => {
     const cfg = loadConfig(VALID);
     expect(cfg.port).toBe(3000);

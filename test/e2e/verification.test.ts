@@ -6,7 +6,7 @@ import { InMemoryAuditLogRepository } from '@/adapters/memory/patient-query.memo
 import { verifyEd25519 } from '@/adapters/keys/local-key.service';
 
 async function tokenFor(app: Express, providerId: string): Promise<string> {
-  const res = await request(app).post('/auth/session').send({ providerId });
+  const res = await request(app).post('/api/v1/portal/auth/session').send({ providerId });
   return res.body.token as string;
 }
 

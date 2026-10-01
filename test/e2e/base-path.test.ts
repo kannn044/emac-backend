@@ -8,11 +8,11 @@ describe('base path mounting (deploy under /drugallergy)', () => {
       HTTP_BASE_PATH: '/drugallergy', AUTH_PROVIDER: 'mock',
       PUBLIC_BASE_URL: 'https://api-mophlink.moph.go.th/drugallergy',
     } });
-    const mode = await request(app).get('/drugallergy/auth/mode');
+    const mode = await request(app).get('/drugallergy/api/v1/portal/auth/mode');
     expect(mode.body).toEqual({ mode: 'mock' });
-    const providers = await request(app).get('/drugallergy/auth/providers');
+    const providers = await request(app).get('/drugallergy/api/v1/portal/auth/providers');
     expect(providers.status).toBe(200);
-    const login = await request(app).post('/drugallergy/auth/session')
+    const login = await request(app).post('/drugallergy/api/v1/portal/auth/session')
       .send({ providerId: providers.body.providers[0].providerId });
     expect(login.status).toBe(201);
     const patients = await request(app).get('/drugallergy/api/v1/patients')

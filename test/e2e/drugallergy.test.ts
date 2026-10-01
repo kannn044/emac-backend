@@ -1,3 +1,4 @@
+import { fakeRealProvider } from '../helpers/real-provider';
 /**
  * POST /api/v1/drugallergy/search — e2e (single CID, auth + validation + quota)
  * ใช้ mock auth (default test) เพื่อได้ session token; override allergySource ด้วย fake
@@ -39,13 +40,13 @@ function harness(total = 5, env: Record<string, string> = {}) {
   const accessLog = new InMemoryServiceAccessLogRepository();
   const h = makeTestHarness({
     env: { DRUGALLERGY_DAILY_LIMIT: '100', ...env },
-    overrides: { allergySource: new FakeSource(total), serviceAccessLogRepo: accessLog },
+    overrides: { auth: fakeRealProvider(), allergySource: new FakeSource(total), serviceAccessLogRepo: accessLog },
   });
   return { ...h, accessLog };
 }
 
 async function token(app: ReturnType<typeof harness>['app']): Promise<string> {
-  const res = await request(app).post('/auth/session').send({ providerId: 'mock-pharm-001' });
+  const res = await request(app).post('/auth/callback').send({ code: 'test-oauth-code' });
   return res.body.token as string;
 }
 
@@ -141,7 +142,7 @@ describe('POST /api/v1/drugallergy/lookup (service M2M — IP + API key)', () =>
   });
 
   it('ไม่ตั้งค่า service (default) → 503 ปิด endpoint', async () => {
-    const { app } = makeTestHarness({ overrides: { allergySource: new FakeSource(3) } });
+    const { app } = makeTestHarness({ overrides: { auth: fakeRealProvider(), allergySource: new FakeSource(3) } });
     const res = await request(app)
       .post('/api/v1/drugallergy/lookup')
       .set('cf-connecting-ip', '203.0.113.5')

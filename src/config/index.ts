@@ -43,6 +43,7 @@ const ConfigSchema = z.object({
 
   adapters: z.object({
     authProvider: z.enum(['mock', 'real']).default('mock'),
+    portalAuthProvider: z.enum(['mock', 'real']).default('mock'),
     keyService: z.enum(['local', 'kms']).default('local'),
     // ที่เก็บ keypair: postgres (default) | memory (dev/mock ไม่ต้องมี DB)
     keyStore: z.enum(['postgres', 'memory']).default('postgres'),
@@ -63,7 +64,7 @@ const ConfigSchema = z.object({
   }),
 
   /**
-   * MOPH Provider ID (OAuth2 Authorization Code) — ใช้เมื่อ AUTH_PROVIDER=real
+   * MOPH Provider ID — third-party always real; portal chooses its own mode.
    * อ้างอิง "คู่มือการเชื่อมต่อระบบด้วย OAuth ของ Provider ID" (26 พ.ค. 2568):
    *   authorize : GET  {baseUrl}/v1/oauth2/authorize
    *   token     : POST {baseUrl}/v1/oauth2/token   (Basic client_id:secret)
@@ -104,6 +105,8 @@ const ConfigSchema = z.object({
    * ด้วย DuckDB (read_parquet glob) แล้วค้นด้วย CID
    */
   drugAllergy: z.object({
+    // Lookup only. Third-party search always reads real Parquet.
+    dataMode: z.enum(['mock', 'real']).default('real'),
     // glob path ของไฟล์ parquet บน server เช่น /data/drugallergy/drugallergy_*.parquet
     // ว่าง = ปิด endpoint (ตอบ 503)
     parquetGlob: z.string().default(''),
@@ -129,8 +132,8 @@ const ConfigSchema = z.object({
     maxRecords: z.coerce.number().int().positive().default(2000),
   }),
 }).superRefine((cfg, ctx) => {
-  // AUTH_PROVIDER=real → ต้องมี config MOPH Provider ID ครบ (fail fast ตอน boot)
-  if (cfg.adapters.authProvider === 'real') {
+  // Real portal validates at boot; third-party fails closed at OAuth request if unconfigured.
+  if (cfg.adapters.portalAuthProvider === 'real') {
     const required: Array<[string, string | undefined]> = [
       ['mophProvider.baseUrl (MOPH_PROVIDER_BASE_URL)', cfg.mophProvider.baseUrl],
       ['mophProvider.clientId (MOPH_PROVIDER_CLIENT_ID)', cfg.mophProvider.clientId || undefined],
@@ -141,7 +144,7 @@ const ConfigSchema = z.object({
       if (!value) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: `${name} is required when AUTH_PROVIDER=real`,
+          message: `${name} is required when portal authentication is real`,
         });
       }
     }
@@ -175,6 +178,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     database: { url: env.DATABASE_URL },
     adapters: {
       authProvider: env.AUTH_PROVIDER,
+      portalAuthProvider: env.PORTAL_AUTH_PROVIDER ?? env.AUTH_PROVIDER,
       keyService: env.KEY_SERVICE,
       keyStore: env.KEY_STORE,
       dataStore: env.DATA_STORE,
@@ -202,6 +206,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     },
     rollout: { hospcodeAllowlist: parseList(env.HOSPCODE_ALLOWLIST) },
     drugAllergy: {
+      dataMode: env.DRUGALLERGY_DATA_MODE,
       parquetGlob: env.DRUGALLERGY_PARQUET_GLOB,
       dailyRecordLimit: env.DRUGALLERGY_DAILY_LIMIT,
       maxCidsPerRequest: env.DRUGALLERGY_MAX_CIDS,

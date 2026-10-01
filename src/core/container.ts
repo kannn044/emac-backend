@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto';
 import type { Pool } from 'pg';
 import type { AppConfig } from '@/config/index';
 import type { Clock, EventBus, HealthProbe, IdGenerator } from '@/ports/index';
@@ -44,10 +45,10 @@ import type {
 } from '@/modules/drugallergy/ports';
 import { DrugAllergyService } from '@/modules/drugallergy/drugallergy.service';
 import { DuckDbAllergySource } from '@/adapters/parquet/duckdb-allergy-source';
+import { MockAllergySource } from '@/adapters/memory/mock-allergy-source';
 import { PgAllergyQuotaStore } from '@/adapters/db/allergy-quota.repository';
 import { InMemoryAllergyQuotaStore } from '@/adapters/memory/allergy-quota.memory';
 import { PgServiceAccessLogRepository } from '@/adapters/db/service-access-log.repository';
-import { InMemoryServiceAccessLogRepository } from '@/adapters/memory/service-access-log.memory';
 
 /**
  * Container — สิ่งที่ทุก module ใช้ร่วมกัน (ประกอบครั้งเดียวที่ composition root)
@@ -66,6 +67,9 @@ export interface Container {
   keys: KeyService;
   sessions: SessionService;
   authService: AuthService;
+  portalAuth: AuthProvider;
+  portalSessions: SessionService;
+  portalAuthService: AuthService;
   // Patients (P3)
   patientsService: PatientsService;
   // Verification (P4)
@@ -74,6 +78,7 @@ export interface Container {
   cardsService: CardService;
   // Drug allergy history query (parquet/DuckDB)
   drugAllergyService: DrugAllergyService;
+  searchService: DrugAllergyService;
   // Access log ของ service endpoint (/drugallergy/lookup)
   serviceAccessLogRepo: ServiceAccessLogRepository;
   shutdown(): Promise<void>;
@@ -112,22 +117,22 @@ export function buildContainer(
   const healthProbes =
     overrides.healthProbes ?? [new PostgresHealthProbe(db)];
 
-  // ---- Auth / identity / keys (สลับ mock↔real ตาม config ที่จุดเดียวนี้) ----
+  // Third-party OAuth always uses Provider ID; only portal auth can be mock.
   const auth: AuthProvider =
     overrides.auth ??
-    (config.adapters.authProvider === 'mock'
-      ? new MockAuthProvider()
-      : new MophProviderAuthProvider(
-          {
-            // superRefine ใน config การันตีว่าค่าเหล่านี้ไม่ว่างเมื่อ authProvider=real
-            baseUrl: config.mophProvider.baseUrl ?? '',
-            clientId: config.mophProvider.clientId,
-            clientSecret: config.mophProvider.clientSecret,
-            redirectUri: config.mophProvider.redirectUri,
-            scope: config.mophProvider.scope,
-          },
-          logger,
-        ));
+    new MophProviderAuthProvider(
+      {
+        // Missing credentials fail closed when OAuth is called; never use mock.
+        baseUrl: config.mophProvider.baseUrl ?? '',
+        clientId: config.mophProvider.clientId,
+        clientSecret: config.mophProvider.clientSecret,
+        redirectUri: config.mophProvider.redirectUri,
+        scope: config.mophProvider.scope,
+      },
+      logger,
+    );
+  const portalAuth = config.adapters.portalAuthProvider === 'mock'
+    ? new MockAuthProvider() : auth;
 
   const keyStore: SigningKeyStore =
     overrides.keyStore ??
@@ -138,7 +143,7 @@ export function buildContainer(
   const keys: KeyService = new LocalKeyService(keyStore, clock);
 
   const sessions = new SessionService(
-    config.session.jwtSecret,
+    createHmac('sha256', config.session.jwtSecret).update('emac:third-party:v1').digest('hex'),
     config.session.ttlSeconds,
     config.session.refreshTtlSeconds,
     clock,
@@ -149,6 +154,17 @@ export function buildContainer(
     keys,
     sessions,
     config.rollout.hospcodeAllowlist,
+  );
+
+  const portalSessions = new SessionService(
+    createHmac('sha256', config.session.jwtSecret)
+      .update(`emac:portal:${config.adapters.portalAuthProvider}:v1`).digest('hex'),
+    config.session.ttlSeconds,
+    config.session.refreshTtlSeconds,
+    clock,
+  );
+  const portalAuthService = new AuthService(
+    portalAuth, keys, portalSessions, config.rollout.hospcodeAllowlist,
   );
 
   // ---- Patients / verification / audit (P3–P4) — เลือก store ตาม config ----
@@ -176,12 +192,22 @@ export function buildContainer(
   // ---- Drug allergy history query (parquet/DuckDB + quota) ----
   const allergySource: AllergySource =
     overrides.allergySource ??
-    new DuckDbAllergySource(config.drugAllergy.parquetGlob, logger);
+    (config.drugAllergy.dataMode === 'mock'
+      ? new MockAllergySource()
+      : new DuckDbAllergySource(config.drugAllergy.parquetGlob, logger));
   const allergyQuota: AllergyQuotaStore =
     overrides.allergyQuota ??
     (useMemoryData
       ? new InMemoryAllergyQuotaStore()
       : new PgAllergyQuotaStore(db));
+  const searchService = new DrugAllergyService(
+    overrides.allergySource ?? new DuckDbAllergySource(config.drugAllergy.parquetGlob, logger),
+    overrides.allergyQuota ?? new PgAllergyQuotaStore(db),
+    clock,
+    config.drugAllergy.dailyRecordLimit,
+    config.drugAllergy.maxCidsPerRequest,
+    config.service.maxRecords,
+  );
   const drugAllergyService = new DrugAllergyService(
     allergySource,
     allergyQuota,
@@ -193,9 +219,7 @@ export function buildContainer(
 
   const serviceAccessLogRepo: ServiceAccessLogRepository =
     overrides.serviceAccessLogRepo ??
-    (useMemoryData
-      ? new InMemoryServiceAccessLogRepository()
-      : new PgServiceAccessLogRepository(db));
+    new PgServiceAccessLogRepository(db);
 
   const patientsService = new PatientsService(patientRepo, auditRepo, clock);
   const verificationService = new VerificationService(
@@ -219,6 +243,10 @@ export function buildContainer(
     keys,
     sessions,
     authService,
+    portalAuth,
+    portalSessions,
+    portalAuthService,
+    searchService,
     patientsService,
     verificationService,
     cardsService,

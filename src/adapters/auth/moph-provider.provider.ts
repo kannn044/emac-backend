@@ -166,6 +166,7 @@ export class MophProviderAuthProvider implements AuthProvider {
 
   /** URL หน้า login ของ Provider ID (frontend redirect ผู้ใช้ไปที่นี่) */
   buildAuthorizeUrl(state?: string): string {
+    this.assertConfigured();
     const url = new URL('/v1/oauth2/authorize', this.cfg.baseUrl);
     url.searchParams.set('client_id', this.cfg.clientId);
     url.searchParams.set('response_type', 'code');
@@ -175,12 +176,20 @@ export class MophProviderAuthProvider implements AuthProvider {
     return url.toString();
   }
 
+  private assertConfigured(): void {
+    if (!this.cfg.baseUrl || !this.cfg.clientId || !this.cfg.clientSecret || !this.cfg.redirectUri) {
+      this.logger?.error('Provider ID configuration missing: set MOPH_PROVIDER_BASE_URL, MOPH_PROVIDER_CLIENT_ID, MOPH_PROVIDER_CLIENT_SECRET, MOPH_PROVIDER_REDIRECT_URI');
+      throw AppError.unavailable('Provider ID is not configured');
+    }
+  }
+
   listMockProfiles(): MockProfileSummary[] {
     return []; // real ไม่เปิดเผยรายชื่อ
   }
 
   /** credential = authorization code จาก redirect ของ Provider ID */
   async authenticate(credential: string): Promise<ProviderInfo> {
+    this.assertConfigured();
     const accessToken = await this.exchangeCode(credential);
     const profile = await this.fetchProfile(accessToken);
     return mapProfileToProviderInfo(profile);

@@ -56,9 +56,11 @@ npm run typecheck         # tsc --noEmit
 
 ### 1) Web login (emac frontend)
 
-`GET /auth/login` → 302 ไปหน้า login MOPH Provider ID → callback กลับที่
+`PORTAL_AUTH_PROVIDER=mock`: เลือกบัญชีทดสอบผ่าน `/api/v1/portal/auth/providers` และ `/api/v1/portal/auth/session`; real ใช้ flow ด้านล่าง
+
+`GET /api/v1/portal/auth/login` → 302 ไปหน้า login MOPH Provider ID → callback กลับที่
 `/auth/callback` → เด้ง `?code` ไป frontend (`MOPH_PROVIDER_FRONTEND_CALLBACK_URL`) →
-frontend `POST /auth/callback {code}` → ได้ `{ token, expiresAt, profile }`
+frontend `POST /api/v1/portal/auth/callback {code}` → ได้ `{ token, expiresAt, profile }`
 
 ### 2) Third-party broker (ระบบภายนอก เช่น HIS)
 
@@ -68,12 +70,14 @@ frontend `POST /auth/callback {code}` → ได้ `{ token, expiresAt, profile
 GET /auth/login?redirect_to=https://his-a.go.th/callback&state=<csrf-ของเขา>
   → user login กับ Provider ID
   → ระบบเด้ง https://his-a.go.th/callback?code=...&state=<csrf-เดิม>
-  → backend ของเขา POST /auth/callback {code} → session JWT → เรียก /api/v1/*
+  → backend ของเขา POST /auth/callback {code} → session JWT → เรียก /api/v1/drugallergy/search
 ```
 
 ### Token lifetime & refresh
 
-`POST /auth/callback` (และ mock `/auth/session`) คืน **access token + refresh token**:
+Portal ใช้ `/api/v1/portal/auth/refresh` และ third party ใช้ `/auth/refresh` เท่านั้น Token ใช้ข้ามช่องทางไม่ได้
+
+`POST /auth/callback` (และ portal mock `/api/v1/portal/auth/session`) คืน **access token + refresh token**:
 
 - **access token** อายุ **30 นาที** — แนบทุก request (`Authorization: Bearer <token>`)
 - **refresh token** ต่ออายุ access ได้จนถึงเพดาน **12 ชม. นับจาก login** — `POST /auth/refresh { refreshToken }` → ได้ access + refresh ชุดใหม่ (`refreshExpiresAt` = เพดานเดิม ไม่ยืด)
@@ -96,6 +100,65 @@ redirect target ไว้ใน state แบบ HMAC-signed (หมดอาย�
 public key ผู้ลงนาม: `GET /api/v1/keys/:providerId`
 
 ## Drug allergy history query (CID lookup)
+
+### แยก third-party production ออกจากหน้าเว็บ
+
+- `/auth/*` และ `/api/v1/drugallergy/search` เป็น third-party production เสมอ: Provider ID จริง + Parquet จริง ไม่ขึ้นกับ `AUTH_PROVIDER`, `PORTAL_AUTH_PROVIDER` หรือ `DRUGALLERGY_DATA_MODE`
+- หน้าเว็บ login ผ่าน `/api/v1/portal/auth/*` โดยเลือก `PORTAL_AUTH_PROVIDER=mock|real` (หากไม่กำหนด จะใช้ `AUTH_PROVIDER` เดิมเป็น fallback เฉพาะหน้าเว็บ)
+- Token และ refresh token แยกสองช่องทาง ใช้ข้ามกันไม่ได้ และ token แบบเดิมก่อนอัปเดตจะใช้ไม่ได้ ต้อง login ใหม่หนึ่งครั้ง
+- `/search` ใช้ PostgreSQL สำหรับ quota เสมอ และ access log ของ third-party ใช้ PostgreSQL ไม่ขึ้นกับ `DATA_STORE` ของหน้าเว็บ
+- `/lookup` ยังคง API key + IP allowlist และเลือกข้อมูลด้วย `DRUGALLERGY_DATA_MODE=mock|real` (ค่าเริ่มต้น real) โหมด mock มี `MOCK-CID-001` และ `MOCK-CID-002`
+- Header `X-Drugallergy-Data-Mode` ของ search เป็น `real` เสมอ; lookup เป็นค่าตามโหมดของตน
+- ต้องมี Provider ID credentials และ Parquet path จริงใน env: คำว่า “เสมอ” หมายถึงไม่มีสวิตช์เปลี่ยน search เป็น mock ไม่ใช่การ hardcode secret
+- ถ้าไม่มี Provider ID config จะตอบ 503 ตอนเริ่ม OAuth/แลก code; ไม่มี Parquet glob จะตอบ 503 ตอนค้น ไม่ fallback เป็นข้อมูล mock
+
+```dotenv
+PORTAL_AUTH_PROVIDER=mock
+MOPH_PROVIDER_BASE_URL=https://provider.id.th
+MOPH_PROVIDER_CLIENT_ID=<ค่าที่ได้รับอนุมัติ>
+MOPH_PROVIDER_CLIENT_SECRET=<ค่าที่ได้รับอนุมัติ>
+MOPH_PROVIDER_REDIRECT_URI=https://api-mophlink.moph.go.th/drugallergy/auth/callback
+DRUGALLERGY_PARQUET_GLOB=/data/drugallergy/drugallergy_*.parquet
+DRUGALLERGY_DATA_MODE=real
+```
+
+คง `THIRD_PARTY_REDIRECT_ALLOWLIST` ของ partner, `DATABASE_URL`, `SESSION_JWT_SECRET` และ SERVICE_API_KEYS/SERVICE_ALLOWLIST_IPS เดิมไว้ ไม่ต้องเปลี่ยน URL callback ที่ลงทะเบียนกับ Provider ID
+
+หลัง deploy โค้ด **ทั้ง backend และ frontend**:
+
+```bash
+# เครื่อง backend (ไม่มี npm run build; รันผ่าน tsx)
+cd /home/gdata/emac-backend
+npm ci
+npm run typecheck
+pm2 restart emac-api --update-env
+
+# เครื่อง frontend
+cd /home/gdata/emac/emac-frontend
+npm ci
+npm run build:emac
+pm2 restart emac-web --update-env
+```
+
+ไม่ต้อง migration ใหม่สำหรับการแยก auth นี้ แต่ฐานข้อมูลต้องมีตาราง quota/access log จาก migrations เดิมแล้ว
+Frontend ใช้ `/api/v1/portal/auth/*` จึงผ่าน nginx `location /api/` เดิมได้ ไม่ต้องเพิ่ม location ใหม่
+อัปเดตทั้งสองฝั่งในช่วงเดียวกัน: frontend เก่าที่เรียก `/auth/*` จะไม่สามารถใช้ mock login ได้
+
+ตรวจหลัง deploy:
+
+```bash
+# ต้องได้ real (third party)
+curl -i https://api-mophlink.moph.go.th/drugallergy/auth/mode
+# ต้องได้ mock (portal)
+curl -i https://emac.moph.go.th/api/v1/portal/auth/mode
+# ต้องได้ 302 ไป Provider ID เมื่อ credentials ครบ
+curl -I https://api-mophlink.moph.go.th/drugallergy/auth/login
+```
+
+ให้ partner login ใหม่ผ่าน `/auth/login` → `/auth/callback` และใช้ session Bearer ของ eMAC เรียก `/api/v1/drugallergy/search` ตามเดิม
+การตรวจ Provider ID จริงต้องทดสอบบน deployment ที่มี client credentials และ callback ที่อนุมัติ ไม่ได้ทดสอบบัญชีจริงจากเครื่องพัฒนานี้
+
+### รูปแบบการค้นหา
 
 `POST /api/v1/drugallergy/search` — third-party HIS ส่ง `{ "cid": "..." }` (CID เดียว) → ค้นในไฟล์
 `drugallergy_*.parquet` บน server ด้วย **DuckDB** (`read_parquet` glob + `WHERE CID =`) →
@@ -156,7 +219,7 @@ DRUGALLERGY_MAX_CIDS=5000
 ### สลับ mock ↔ real
 
 ```bash
-AUTH_PROVIDER=mock   # dev: login ด้วยโปรไฟล์จำลอง (GET /auth/providers)
+PORTAL_AUTH_PROVIDER=mock   # หน้าเว็บ: GET /api/v1/portal/auth/providers
 AUTH_PROVIDER=real   # production: OAuth2 กับ MOPH Provider ID — ต้องตั้ง MOPH_PROVIDER_* ครบ
 ```
 

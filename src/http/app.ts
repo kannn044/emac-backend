@@ -55,6 +55,13 @@ export function createApp(container: Container): Express {
         container.config.mophProvider.thirdPartyRedirectAllowlist,
     }),
   );
+  // Portal login is separate from the existing third-party /auth/* contract.
+  router.use('/api/v1/portal', authRouter({
+    provider: container.portalAuth,
+    authService: container.portalAuthService,
+    sessions: container.portalSessions,
+    frontendCallbackUrl: container.config.mophProvider.frontendCallbackUrl || undefined,
+  }));
   // API v1 — feature modules (P3+)
   // public (ไม่ต้อง auth) — ต้อง mount ก่อน router ที่บังคับ auth
   router.use('/api/v1', keysRouter({ keys: container.keys }));
@@ -66,8 +73,10 @@ export function createApp(container: Container): Express {
   router.use(
     '/api/v1',
     drugAllergyRouter({
+      dataMode: container.config.drugAllergy.dataMode,
       sessions: container.sessions,
       service: container.drugAllergyService,
+      searchService: container.searchService,
       serviceAuthConfig: {
         apiKeys: container.config.service.apiKeys,
         allowlistIps: container.config.service.allowlistIps,
@@ -81,14 +90,14 @@ export function createApp(container: Container): Express {
   router.use(
     '/api/v1',
     patientsRouter({
-      sessions: container.sessions,
+      sessions: container.portalSessions,
       patients: container.patientsService,
     }),
   );
   router.use(
     '/api/v1',
     verificationRouter({
-      sessions: container.sessions,
+      sessions: container.portalSessions,
       verification: container.verificationService,
       cards: container.cardsService,
     }),
@@ -96,7 +105,7 @@ export function createApp(container: Container): Express {
   router.use(
     '/api/v1',
     authCardsRouter({
-      sessions: container.sessions,
+      sessions: container.portalSessions,
       cards: container.cardsService,
     }),
   );
